@@ -10,7 +10,11 @@
     #messages div { background: #eee; margin: 5px 0; padding: 10px; border-radius: 5px; }
     .hidden { display: none; }
     .error { color: red; margin: 10px 0; }
+    .success { color: green; margin: 10px 0; }
     .debug { background: #fffacd; padding: 10px; margin: 10px 0; border-radius: 5px; }
+    .tab-buttons { display: flex; margin-bottom: 10px; }
+    .tab-button { flex: 1; padding: 10px; border: 1px solid #ccc; background: #f0f0f0; cursor: pointer; }
+    .tab-button.active { background: #007bff; color: white; }
   </style>
 </head>
 <body>
@@ -23,20 +27,44 @@
     <div id="firebaseStatus">Checking Firebase...</div>
   </div>
 
-  <!-- Login Form -->
-  <div id="loginSection">
-    <form id="loginForm">
-      <input type="email" id="email" placeholder="Email" required>
-      <input type="password" id="password" placeholder="Password" required>
-      <button type="submit">Login</button>
-    </form>
-    <div id="loginError" class="error"></div>
-    
-    <!-- Test Credentials Hint -->
+  <!-- Login/Register Section -->
+  <div id="authSection">
+    <div class="tab-buttons">
+      <button class="tab-button active" onclick="showTab('login')">Login</button>
+      <button class="tab-button" onclick="showTab('register')">Register</button>
+    </div>
+
+    <!-- Login Form -->
+    <div id="loginTab">
+      <form id="loginForm">
+        <input type="email" id="loginEmail" placeholder="Email" required>
+        <input type="password" id="loginPassword" placeholder="Password" required>
+        <button type="submit">Login</button>
+      </form>
+      <div id="loginError" class="error"></div>
+    </div>
+
+    <!-- Register Form -->
+    <div id="registerTab" class="hidden">
+      <form id="registerForm">
+        <input type="email" id="registerEmail" placeholder="Email" required>
+        <input type="password" id="registerPassword" placeholder="Password (min 6 characters)" required>
+        <select id="userType" required>
+          <option value="">Select user type</option>
+          <option value="teacher">Teacher</option>
+          <option value="learner">Learner</option>
+        </select>
+        <button type="submit">Create Account</button>
+      </form>
+      <div id="registerError" class="error"></div>
+      <div id="registerSuccess" class="success"></div>
+    </div>
+
+    <!-- Quick Test Buttons -->
     <div style="margin-top: 20px; padding: 10px; background: #e7f3ff; border-radius: 5px;">
-      <strong>Test Accounts:</strong><br>
-      Teacher: teacher@school.com (any password)<br>
-      Student: student@school.com (any password)
+      <strong>Quick Test:</strong><br>
+      <button onclick="fillTestCredentials('teacher')">Fill Teacher Credentials</button>
+      <button onclick="fillTestCredentials('learner')">Fill Learner Credentials</button>
     </div>
   </div>
 
@@ -67,6 +95,7 @@
     import { 
       getAuth, 
       signInWithEmailAndPassword, 
+      createUserWithEmailAndPassword,
       signOut,
       onAuthStateChanged 
     } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
@@ -77,7 +106,9 @@
       getDocs, 
       serverTimestamp, 
       orderBy, 
-      query 
+      query,
+      doc,
+      setDoc 
     } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
     // Firebase config
@@ -100,19 +131,55 @@
       document.getElementById('firebaseStatus').style.color = 'green';
 
       // DOM references
-      const loginSection = document.getElementById("loginSection");
+      const authSection = document.getElementById("authSection");
       const teacherSection = document.getElementById("teacherSection");
       const learnerSection = document.getElementById("learnerSection");
       const teacherMessages = document.getElementById("teacherMessages");
       const learnerMessages = document.getElementById("learnerMessages");
       const loginError = document.getElementById("loginError");
+      const registerError = document.getElementById("registerError");
+      const registerSuccess = document.getElementById("registerSuccess");
+
+      // Tab switching function
+      window.showTab = (tabName) => {
+        // Update tab buttons
+        document.querySelectorAll('.tab-button').forEach(btn => {
+          btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        
+        // Show/hide tabs
+        document.getElementById('loginTab').classList.toggle('hidden', tabName !== 'login');
+        document.getElementById('registerTab').classList.toggle('hidden', tabName !== 'register');
+        
+        // Clear messages
+        loginError.textContent = '';
+        registerError.textContent = '';
+        registerSuccess.textContent = '';
+      };
+
+      // Quick test credential filler
+      window.fillTestCredentials = (type) => {
+        if (type === 'teacher') {
+          document.getElementById('registerEmail').value = 'teacher@school.com';
+          document.getElementById('registerPassword').value = '123456';
+          document.getElementById('userType').value = 'teacher';
+        } else {
+          document.getElementById('registerEmail').value = 'student@school.com';
+          document.getElementById('registerPassword').value = '123456';
+          document.getElementById('userType').value = 'learner';
+        }
+      };
 
       // Check auth state
       onAuthStateChanged(auth, (user) => {
         if (user) {
           console.log("User is signed in:", user.email);
-          loginSection.classList.add("hidden");
-          if (user.email.toLowerCase().includes("teacher")) {
+          authSection.classList.add("hidden");
+          
+          // Check user type from Firestore or email pattern
+          const userEmail = user.email.toLowerCase();
+          if (userEmail.includes('teacher') || userEmail === 'teacher@school.com') {
             teacherSection.classList.remove("hidden");
             loadMessages("teacher");
           } else {
@@ -123,15 +190,15 @@
           console.log("User is signed out");
           teacherSection.classList.add("hidden");
           learnerSection.classList.add("hidden");
-          loginSection.classList.remove("hidden");
+          authSection.classList.remove("hidden");
         }
       });
 
       // Login handler
       document.getElementById("loginForm").addEventListener("submit", async (e) => {
         e.preventDefault();
-        const email = document.getElementById("email").value;
-        const password = document.getElementById("password").value;
+        const email = document.getElementById("loginEmail").value;
+        const password = document.getElementById("loginPassword").value;
         
         loginError.textContent = "";
         
@@ -151,7 +218,7 @@
               errorMessage += 'This account has been disabled';
               break;
             case 'auth/user-not-found':
-              errorMessage += 'No account found with this email';
+              errorMessage += 'No account found with this email. Please register first.';
               break;
             case 'auth/wrong-password':
               errorMessage += 'Incorrect password';
@@ -170,10 +237,84 @@
         }
       });
 
+      // Register handler
+      document.getElementById("registerForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const email = document.getElementById("registerEmail").value;
+        const password = document.getElementById("registerPassword").value;
+        const userType = document.getElementById("userType").value;
+        
+        registerError.textContent = "";
+        registerSuccess.textContent = "";
+        
+        if (password.length < 6) {
+          registerError.textContent = "Password must be at least 6 characters long";
+          return;
+        }
+        
+        if (!userType) {
+          registerError.textContent = "Please select user type";
+          return;
+        }
+
+        try {
+          console.log("Attempting to create account:", email);
+          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          console.log("Registration successful:", userCredential.user.email);
+          
+          // Store additional user data in Firestore
+          try {
+            await setDoc(doc(db, "users", userCredential.user.uid), {
+              email: email,
+              userType: userType,
+              createdAt: serverTimestamp()
+            });
+          } catch (firestoreError) {
+            console.error("Error saving user data:", firestoreError);
+            // Continue anyway - auth was successful
+          }
+          
+          registerSuccess.textContent = `Account created successfully! You are now logged in as ${userType}.`;
+          
+          // Auto-switch to login tab after successful registration
+          setTimeout(() => {
+            showTab('login');
+            document.getElementById('loginEmail').value = email;
+            document.getElementById('loginPassword').value = '';
+          }, 2000);
+          
+        } catch (error) {
+          console.error("Registration error:", error);
+          let errorMessage = "Registration failed: ";
+          
+          switch (error.code) {
+            case 'auth/email-already-in-use':
+              errorMessage += 'This email is already registered. Please login instead.';
+              break;
+            case 'auth/invalid-email':
+              errorMessage += 'Invalid email address';
+              break;
+            case 'auth/weak-password':
+              errorMessage += 'Password is too weak';
+              break;
+            case 'auth/operation-not-allowed':
+              errorMessage += 'Email/password accounts are not enabled. Please check Firebase Console.';
+              break;
+            default:
+              errorMessage += error.message;
+          }
+          
+          registerError.textContent = errorMessage;
+        }
+      });
+
       // Logout
       window.logout = () => {
         signOut(auth).then(() => {
           console.log("User signed out");
+          // Clear forms
+          document.getElementById('loginForm').reset();
+          document.getElementById('registerForm').reset();
         }).catch((error) => {
           console.error("Logout error:", error);
         });
@@ -220,7 +361,6 @@
               try {
                 dateString = data.date.toDate().toLocaleString();
               } catch (e) {
-                // If timestamp is pending, use current time
                 dateString = new Date().toLocaleString() + " (pending)";
               }
             }
