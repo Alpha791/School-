@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>School Project</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      padding: 0;
+      background: #f9f9f9;
+    }
+    input, textarea, button {
+      display: block;
+      margin: 10px 0;
+      padding: 8px;
+      width: 100%;
+      max-width: 300px;
+    }
+    #messages div {
+      background: #eee;
+      margin: 5px 0;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1 id="appTitle">Welcome to School App</h1>
+
+  <!-- Login Form -->
+  <div id="loginSection">
+    <form id="loginForm">
+      <input type="email" id="email" placeholder="Email" required>
+      <input type="password" id="password" placeholder="Password" required>
+      <button type="submit">Login</button>
+    </form>
+  </div>
+
+  <!-- Teacher Dashboard -->
+  <div id="teacherSection" class="hidden">
+    <h2>Teacher Dashboard</h2>
+    <textarea id="announcement" placeholder="Write announcement..."></textarea>
+    <button id="postBtn">Post</button>
+    <h3>Announcements</h3>
+    <div id="teacherMessages"></div>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <!-- Learner Dashboard -->
+  <div id="learnerSection" class="hidden">
+    <h2>Learner Dashboard</h2>
+    <div id="learnerMessages"></div>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <!-- Firebase + App Logic -->
+  <script type="module">
+    // Import Firebase SDK
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+    // TODO: Replace with your Firebase project config
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // DOM elements
+    const loginSection = document.getElementById("loginSection");
+    const teacherSection = document.getElementById("teacherSection");
+    const learnerSection = document.getElementById("learnerSection");
+    const teacherMessages = document.getElementById("teacherMessages");
+    const learnerMessages = document.getElementById("learnerMessages");
+
+    // Login logic
+    document.getElementById("loginForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      signInWithEmailAndPassword(auth, email, password)
+        .then(() => {
+          loginSection.classList.add("hidden");
+          if (email.includes("teacher")) {
+            teacherSection.classList.remove("hidden");
+            loadMessages("teacher");
+          } else {
+            learnerSection.classList.remove("hidden");
+            loadMessages("learner");
+          }
+        })
+        .catch((error) => {
+          alert("Login failed: " + error.message);
+        });
+    });
+
+    // Logout
+    window.logout = () => {
+      signOut(auth).then(() => {
+        teacherSection.classList.add("hidden");
+        learnerSection.classList.add("hidden");
+        loginSection.classList.remove("hidden");
+      });
+    };
+
+    // Teacher posting
+    document.getElementById("postBtn").addEventListener("click", async () => {
+      const text = document.getElementById("announcement").value;
+      if (text.trim() === "") return;
+      await addDoc(collection(db, "announcements"), { text, date: new Date() });
+      document.getElementById("announcement").value = "";
+      loadMessages("teacher");
+    });
+
+    // Load messages
+    async function loadMessages(role) {
+      const querySnapshot = await getDocs(collection(db, "announcements"));
+      const container = role === "teacher" ? teacherMessages : learnerMessages;
+      container.innerHTML = "";
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        const div = document.createElement("div");
+        let dateString = data.date?.seconds 
+          ? new Date(data.date.seconds * 1000).toLocaleString()
+          : new Date().toLocaleString();
+        div.textContent = data.text + " (" + dateString + ")";
+        container.appendChild(div);
+      });
+    }
+  </script>
+</body>
+</html>
