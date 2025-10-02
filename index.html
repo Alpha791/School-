@@ -45,7 +45,7 @@
     // Import Firebase SDKs
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDocs, serverTimestamp, orderBy, query } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
     // ✅ Firebase config (your project)
     const firebaseConfig = {
@@ -102,28 +102,46 @@
     document.getElementById("postBtn").addEventListener("click", async () => {
       const text = document.getElementById("announcement").value.trim();
       if (!text) return;
-      await addDoc(collection(db, "announcements"), { 
-        text, 
-        date: serverTimestamp()   // 🔥 safer: lets Firestore assign timestamp
-      });
-      document.getElementById("announcement").value = "";
-      loadMessages("teacher");
+      try {
+        await addDoc(collection(db, "announcements"), { 
+          text, 
+          date: serverTimestamp()
+        });
+        document.getElementById("announcement").value = "";
+        loadMessages("teacher");
+      } catch (error) {
+        console.error("Error posting announcement:", error);
+      }
     });
 
     // ✅ Load announcements
     async function loadMessages(role) {
-      const querySnapshot = await getDocs(collection(db, "announcements"));
-      const container = role === "teacher" ? teacherMessages : learnerMessages;
-      container.innerHTML = "";
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        const div = document.createElement("div");
-        let dateString = data.date?.toDate 
-          ? data.date.toDate().toLocaleString() 
-          : new Date().toLocaleString();
-        div.textContent = data.text + " (" + dateString + ")";
-        container.appendChild(div);
-      });
+      try {
+        const q = query(collection(db, "announcements"), orderBy("date", "desc"));
+        const querySnapshot = await getDocs(q);
+        const container = role === "teacher" ? teacherMessages : learnerMessages;
+        container.innerHTML = "";
+        
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          const div = document.createElement("div");
+          
+          // Handle timestamp safely
+          let dateString = "Just now";
+          if (data.date) {
+            try {
+              dateString = data.date.toDate().toLocaleString();
+            } catch (e) {
+              dateString = new Date().toLocaleString();
+            }
+          }
+          
+          div.textContent = data.text + " (" + dateString + ")";
+          container.appendChild(div);
+        });
+      } catch (error) {
+        console.error("Error loading messages:", error);
+      }
     }
   </script>
 </body>
