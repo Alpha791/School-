@@ -1,283 +1,187 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>School App — Homework & Announcements</title>
-  <meta name="theme-color" content="#0066ff" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>School Project — Teacher Homework & Announcements</title>
   <style>
     :root{
       --max-width:1100px; --accent:#0066ff; --muted:#6b7280; --card:#fff; --bg:#f3f4f6; --text:#0f172a;
-      --bg-dark:#0b1220; --card-dark:#071022; --text-dark:#e6eef8;
-      --radius:10px;
+      --bg-dark:#0b1220; --card-dark:#071022; --text-dark:#e6eef8; --radius:12px; --gap:14px;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{
-      margin:12px;
-      font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-      background:var(--bg);
-      color:var(--text);
-      display:flex;
-      justify-content:center;
-      -webkit-font-smoothing:antialiased;
-      -moz-osx-font-smoothing:grayscale;
-      -webkit-tap-highlight-color: transparent;
-    }
+    body{font-family:Inter, Roboto, system-ui, Arial, sans-serif;margin:12px;background:var(--bg);color:var(--text);display:flex;justify-content:center;-webkit-font-smoothing:antialiased}
     body.dark{background:var(--bg-dark);color:var(--text-dark)}
-    .container{
-      width:100%;
-      max-width:var(--max-width);
-      background:var(--card);
-      padding:18px;
-      border-radius:var(--radius);
-      box-shadow:0 8px 30px rgba(2,6,23,0.06);
-      min-height:80vh;
-      display:flex;
-      flex-direction:column;
-      gap:14px;
-    }
+    .container{width:100%;max-width:var(--max-width);background:var(--card);padding:18px;border-radius:var(--radius);box-shadow:0 8px 30px rgba(2,6,23,0.06);min-height:80vh;display:flex;flex-direction:column;gap:var(--gap)}
     body.dark .container{background:var(--card-dark);box-shadow:none}
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    h1{font-size:1.25rem;margin:0}
 
-    header{display:flex;align-items:center;justify-content:space-between;gap:12px}
-    h1{font-size:1.1rem;margin:0}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px;margin-top:14px}
+    @media (max-width:920px){.grid{grid-template-columns:1fr}}
 
-    /* layout */
-    .content{display:grid;grid-template-columns:1fr 360px;gap:18px}
-    @media (max-width:980px){ .content{grid-template-columns:1fr} }
+    .card{background:#fff;padding:12px;border-radius:10px;border:1px solid #eef2ff}
+    body.dark .card{background:transparent;border-color:rgba(255,255,255,0.06)}
+    .form-row{margin:8px 0}
+    input,select,textarea,button{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e7eb;font-size:0.95rem}
+    textarea{min-height:100px;resize:vertical}
+    .row{display:flex;gap:8px}
+    .row .col{flex:1}
 
-    /* cards & small controls */
-    .card{background:transparent;padding:12px;border-radius:8px;border:1px solid rgba(0,0,0,0.04)}
-    body:not(.dark) .card{background:#fff;border-color:#eef2ff}
-    body.dark .card{border-color: rgba(255,255,255,0.04) }
+    button.primary{background:var(--accent);color:#fff;border:none;padding:10px 12px;border-radius:8px}
+    button.ghost{background:transparent;border:1px solid #e6e7eb;padding:10px 12px;border-radius:8px}
 
-    form{margin:0}
-    .form-row{margin:8px 0;display:flex;flex-direction:column;gap:6px}
-    .sr{position:absolute;height:1px;width:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+    /* tabs (responsive) */
+    .tabs{display:flex;gap:8px;flex-wrap:wrap}
+    .tab{padding:8px 12px;border-radius:8px;text-align:center;background:#f8fafc;border:1px solid #e6eefc;cursor:pointer;font-weight:600;min-width:100px}
+    .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 
-    input,select,textarea,button{
-      font-size:15px;padding:12px;border-radius:10px;border:1px solid #e6e7eb;
-      background:transparent;outline:none;
-    }
-    input:focus,textarea:focus,select:focus,button:focus{box-shadow:0 0 0 3px rgba(0,102,255,0.12);border-color:var(--accent)}
-    textarea{min-height:110px;resize:vertical}
-    button{display:inline-block}
-    button.primary{background:var(--accent);color:#fff;border:none;padding:12px 14px;border-radius:10px}
-    button.ghost{background:transparent;border:1px solid #e6e7eb;padding:10px 12px;border-radius:10px}
-    .muted{color:var(--muted);font-size:0.92rem}
-    .error{color:#b91c1c}
-    .success{color:#16a34a}
+    .list-item{padding:10px;border-radius:8px;border:1px solid #eef2ff;background:linear-gradient(180deg,#fff,#fbfdff);margin-bottom:10px}
+    .meta{font-size:0.85rem;color:var(--muted);margin-top:6px}
 
-    .list-item{padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,0.04);margin-bottom:10px;background:linear-gradient(180deg,#fff,#fbfdff)}
-    body.dark .list-item{background:transparent;border-color:rgba(255,255,255,0.03)}
-    .meta{font-size:0.85rem;color:var(--muted);margin-top:8px}
-
-    .big-row{display:flex;gap:8px;flex-wrap:wrap}
-    .big-row > *{flex:1;min-width:120px}
+    .muted{color:var(--muted)}
+    .hidden{display:none}
 
     @media (max-width:480px){
-      .container{margin:8px}
-      input,select,textarea,button{font-size:16px;padding:14px}
-      .list-item{padding:14px}
+      .container{padding:12px;border-radius:8px}
+      input,select,textarea,button{font-size:16px;padding:12px}
+      .row{flex-direction:column}
+      .tab{flex:1}
     }
 
     .no-select{user-select:none;-webkit-user-select:none}
-    .visually-hidden{position:absolute;height:1px;width:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+    .sr-only{position:absolute;height:1px;width:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+    /* small banner for non-blocking messages */
+    #banner{padding:8px 12px;border-radius:8px;background:#fffbeb;border:1px solid #fce7b2;color:#92400e;display:none}
+    body.dark #banner{background:#2b2b32;color:#ffdca8;border-color:rgba(255,255,255,0.06)}
   </style>
 </head>
 <body>
   <div class="container" id="app">
     <header>
       <h1>School App — Homework & Announcements</h1>
-      <div class="big-row" style="gap:8px">
-        <button id="themeToggle" class="ghost" type="button" aria-pressed="false">Toggle Dark / Light</button>
-        <div id="status" class="muted" aria-live="polite" style="align-self:center"></div>
+      <div>
+        <button id="themeToggle" type="button" class="small-inline">Toggle Dark / Light</button>
       </div>
     </header>
 
-    <!-- AUTH -->
+    <div id="banner" role="status" aria-live="polite"></div>
+
+    <!-- Auth area -->
     <section id="authWrap" class="card" aria-live="polite">
-      <div style="display:flex;gap:8px;margin-bottom:10px">
-        <!-- keep inline onclick for simplicity, but make sure showPanel is global (added below) -->
-        <button id="tabLogin" class="ghost" aria-pressed="true" onclick="showPanel('login')">Login</button>
-        <button id="tabRegister" class="ghost" aria-pressed="false" onclick="showPanel('register')">Register</button>
+      <div class="tabs" role="tablist" aria-label="Authentication tabs">
+        <button class="tab active" id="tabLogin" role="tab" aria-selected="true" onclick="showPanel('login', this)">Login</button>
+        <button class="tab" id="tabRegister" role="tab" aria-selected="false" onclick="showPanel('register', this)">Register</button>
       </div>
 
       <div id="loginPanel" role="region" aria-labelledby="tabLogin">
-        <form id="loginForm" autocomplete="on" novalidate>
-          <label class="sr" for="loginEmail">Email</label>
-          <input id="loginEmail" type="email" inputmode="email" placeholder="Email" required autocomplete="username"/>
-
-          <label class="sr" for="loginPassword">Password</label>
-          <input id="loginPassword" type="password" placeholder="Password" required autocomplete="current-password"/>
-
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <button class="primary" type="submit" id="loginBtn">Login</button>
-            <button class="ghost" type="button" id="forgotBtn">Forgot?</button>
-          </div>
-
-          <div id="loginError" class="error" role="status" aria-live="polite" style="margin-top:8px"></div>
+        <form id="loginForm" autocomplete="on">
+          <div class="form-row"><label class="sr-only" for="loginEmail">Email</label><input id="loginEmail" type="email" placeholder="Email" required autocomplete="username" /></div>
+          <div class="form-row"><label class="sr-only" for="loginPassword">Password</label><input id="loginPassword" type="password" placeholder="Password" required autocomplete="current-password" /></div>
+          <div class="form-row row"><button class="primary" type="submit">Login</button></div>
+          <div id="loginError" class="muted" style="color:#b91c1c;margin-top:6px" aria-live="polite"></div>
         </form>
       </div>
 
-      <div id="registerPanel" role="region" aria-labelledby="tabRegister" hidden>
-        <form id="registerForm" autocomplete="on" novalidate>
-          <label class="sr" for="registerName">Full name</label>
-          <input id="registerName" type="text" placeholder="Full name" required autocomplete="name"/>
-
-          <label class="sr" for="registerSchool">School / Institution</label>
-          <input id="registerSchool" type="text" placeholder="School or Institution" required autocomplete="organization"/>
-
-          <label class="sr" for="registerEmail">Email</label>
-          <input id="registerEmail" type="email" placeholder="Email" required autocomplete="email"/>
-
-          <label class="sr" for="registerPassword">Password</label>
-          <input id="registerPassword" type="password" placeholder="Password (min 6)" required autocomplete="new-password"/>
-
-          <label class="sr" for="registerType">Role</label>
-          <select id="registerType" required>
-            <option value="">Select role</option>
-            <option value="teacher">Teacher</option>
-            <option value="learner">Learner</option>
-          </select>
-
-          <div style="margin-top:10px">
-            <button class="primary" type="submit">Create account</button>
-          </div>
-
-          <div id="registerError" class="error" role="status" aria-live="polite" style="margin-top:8px"></div>
-          <div id="registerSuccess" class="success" role="status" aria-live="polite" style="margin-top:8px"></div>
+      <div id="registerPanel" class="hidden" role="region" aria-labelledby="tabRegister" aria-hidden="true">
+        <form id="registerForm">
+          <div class="form-row"><label class="sr-only" for="registerName">Full name</label><input id="registerName" type="text" placeholder="Full name" required autocomplete="name" /></div>
+          <div class="form-row"><label class="sr-only" for="registerSchool">School</label><input id="registerSchool" type="text" placeholder="School / Institution" required autocomplete="organization" /></div>
+          <div class="form-row"><label class="sr-only" for="registerEmail">Email</label><input id="registerEmail" type="email" placeholder="Email" required autocomplete="email" /></div>
+          <div class="form-row"><label class="sr-only" for="registerPassword">Password</label><input id="registerPassword" type="password" placeholder="Password (min 6)" required autocomplete="new-password" /></div>
+          <div class="form-row"><label class="sr-only" for="registerType">Role</label><select id="registerType" required><option value="">Select role</option><option value="teacher">Teacher</option><option value="learner">Learner</option></select></div>
+          <div class="form-row"><button class="primary" type="submit">Create account</button></div>
+          <div id="registerError" class="muted" style="color:#b91c1c;margin-top:6px" aria-live="polite"></div>
+          <div id="registerSuccess" class="muted" style="color:#16a34a;margin-top:6px" aria-live="polite"></div>
         </form>
       </div>
     </section>
 
-    <div class="content" id="mainContent" hidden>
+    <div class="grid">
       <main>
-        <!-- Teacher Controls -->
-        <section id="teacherControls" class="card" hidden>
+        <section id="teacherControls" class="card hidden" aria-hidden="true">
           <h3>Post Announcement</h3>
-          <div class="form-row">
-            <label class="visually-hidden" for="announcementText">Announcement</label>
-            <textarea id="announcementText" placeholder="Announcement text"></textarea>
-            <div style="display:flex;gap:8px">
-              <button id="postAnnouncement" class="primary">Post Announcement</button>
-              <div id="announceMsg" class="muted" style="align-self:center"></div>
-            </div>
-          </div>
+          <div class="form-row"><textarea id="announcementText" placeholder="Announcement text"></textarea></div>
+          <div class="form-row"><button id="postAnnouncement" class="primary">Post Announcement</button></div>
 
-          <hr/>
+          <hr style="margin:12px 0" />
 
-          <h3>Post Homework</h3>
-          <form id="homeworkForm" novalidate>
-            <div class="form-row">
-              <input id="hwTitle" placeholder="Homework title (e.g. Maths: Fractions)" required />
-              <textarea id="hwDescription" placeholder="Homework details, instructions, resources, etc" required></textarea>
-              <div class="big-row">
-                <input id="hwDue" type="date" />
-                <select id="hwGrade">
-                  <option value="">All grades</option>
-                  <option>Grade 1</option><option>Grade 2</option><option>Grade 3</option>
-                  <option>Grade 4</option><option>Grade 5</option><option>Grade 6</option>
-                  <option>Grade 7</option><option>Grade 8</option><option>Grade 9</option>
-                </select>
-              </div>
+          <h3>Post Homework (Teachers only — persistent)</h3>
+          <form id="homeworkForm">
+            <div class="form-row"><input id="hwTitle" placeholder="Homework title (e.g. Maths: Fractions)" required /></div>
+            <div class="form-row"><textarea id="hwDescription" placeholder="Homework details, instructions, resources, etc" required></textarea></div>
+            <div class="row">
+              <div class="col"><input id="hwDue" type="date" /></div>
+              <div class="col"><select id="hwGrade"><option value="">All grades</option><option>Grade 1</option><option>Grade 2</option><option>Grade 3</option><option>Grade 4</option><option>Grade 5</option><option>Grade 6</option><option>Grade 7</option><option>Grade 8</option><option>Grade 9</option></select></div>
             </div>
-            <div style="margin-top:8px">
-              <button class="primary" type="submit">Save Homework (persistent)</button>
-              <span id="hwMsg" class="muted" style="margin-left:8px"></span>
-            </div>
+            <div style="margin-top:8px"><button class="primary" type="submit">Save Homework (persistent)</button></div>
+            <div id="hwMsg" class="muted" style="margin-top:8px"></div>
           </form>
 
-          <hr/>
+          <hr style="margin:12px 0" />
 
           <h3>Submitted Answers (Teachers only)</h3>
           <div id="submissionsList"></div>
         </section>
 
-        <!-- Announcements -->
         <section class="card" style="margin-top:12px">
           <h3>Announcements</h3>
-          <div id="announcementsList" aria-live="polite"></div>
+          <div id="announcementsList"></div>
           <div style="text-align:center;margin-top:8px"><button id="loadMoreAnnouncements" class="ghost">Load more</button></div>
         </section>
 
-        <!-- Homeworks -->
         <section class="card" style="margin-top:12px">
           <h3>Homeworks</h3>
-          <div id="homeworkList" aria-live="polite"></div>
+          <div id="homeworkList"></div>
           <div style="text-align:center;margin-top:8px"><button id="loadMoreHomeworks" class="ghost">Load more</button></div>
         </section>
       </main>
 
       <aside>
         <section class="card" id="profileCard" style="text-align:center">
-          <div id="userInfo" class="muted">Not signed in</div>
-          <div style="margin-top:8px"><button id="logoutBtn" class="ghost" hidden>Logout</button></div>
+          <div id="userInfo">Not signed in</div>
+          <div style="margin-top:8px"><button id="logoutBtn" class="ghost hidden">Logout</button></div>
         </section>
 
         <section class="card" style="margin-top:12px">
-          <strong>Info</strong>
-          <p class="muted" style="font-size:0.9rem">Dark/Light mode available. Learners cannot view other students' answers; only teachers can mark submissions.</p>
+          <strong>Quick actions</strong>
+          <p class="muted" style="font-size:0.9rem">Dark/Light mode and secure learner restrictions are enabled. Teachers can view and mark submissions.</p>
         </section>
       </aside>
     </div>
   </div>
 
-  <!-- Global helper: showPanel (non-module so inline onclick works reliably) -->
+  <!-- global showPanel so tab buttons work and accessible -->
   <script>
-    function showPanel(name){
+    function showPanel(name, btn){
       const loginPanel = document.getElementById('loginPanel');
       const registerPanel = document.getElementById('registerPanel');
-      const tabLogin = document.getElementById('tabLogin');
-      const tabRegister = document.getElementById('tabRegister');
+      const tabButtons = document.querySelectorAll('.tabs .tab');
       if(!loginPanel || !registerPanel) return;
+      tabButtons.forEach(b=>{ b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+      if(btn){ btn.classList.add('active'); btn.setAttribute('aria-selected','true'); }
       if(name === 'login'){
-        loginPanel.hidden = false;
-        registerPanel.hidden = true;
-        if(tabLogin) tabLogin.setAttribute('aria-pressed','true');
-        if(tabRegister) tabRegister.setAttribute('aria-pressed','false');
+        loginPanel.classList.remove('hidden'); loginPanel.removeAttribute('aria-hidden');
+        registerPanel.classList.add('hidden'); registerPanel.setAttribute('aria-hidden','true');
       } else {
-        loginPanel.hidden = true;
-        registerPanel.hidden = false;
-        if(tabLogin) tabLogin.setAttribute('aria-pressed','false');
-        if(tabRegister) tabRegister.setAttribute('aria-pressed','true');
+        loginPanel.classList.add('hidden'); loginPanel.setAttribute('aria-hidden','true');
+        registerPanel.classList.remove('hidden'); registerPanel.removeAttribute('aria-hidden');
       }
     }
-    // expose explicitly
     window.showPanel = showPanel;
+    document.addEventListener('DOMContentLoaded', ()=> showPanel('login', document.getElementById('tabLogin')));
   </script>
 
-  <!-- Firebase + app logic (module) -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-    import {
-      getAuth,
-      createUserWithEmailAndPassword,
-      signInWithEmailAndPassword,
-      signOut,
-      onAuthStateChanged,
-      sendEmailVerification,
-      sendPasswordResetEmail
-    } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
-    import {
-      getFirestore,
-      collection,
-      addDoc,
-      setDoc,
-      doc,
-      serverTimestamp,
-      query,
-      orderBy,
-      limit,
-      onSnapshot,
-      getDocs,
-      startAfter,
-      getDoc,
-      updateDoc,
-      enableIndexedDbPersistence
-    } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+    // Firebase imports
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js';
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendEmailVerification, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js';
+    import { getFirestore, collection, addDoc, setDoc, doc, serverTimestamp, query, orderBy, limit, onSnapshot, getDocs, startAfter, getDoc, updateDoc, enableIndexedDbPersistence } from 'https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js';
 
-    // Firebase config (keep secret in production)
+    // config (move to server env for production)
     const firebaseConfig = {
       apiKey: "AIzaSyD_YydnZKjW8IdApXZKMqDHk6ZiF7Ioh-g",
       authDomain: "school-homework-f3191.firebaseapp.com",
@@ -288,353 +192,182 @@
     };
 
     // init
-    let app, auth, db;
-    try {
-      app = initializeApp(firebaseConfig);
-      auth = getAuth(app);
-      db = getFirestore(app);
-      try { enableIndexedDbPersistence(db).catch(()=>{}); } catch(e){}
-      document.getElementById('status').textContent = 'Connected';
-    } catch (e) {
-      console.error('Firebase init error', e);
-      document.getElementById('status').textContent = 'Firebase init error';
-    }
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    try { enableIndexedDbPersistence(db).catch(()=>{}); } catch(e){}
 
-    // UI refs
-    const authWrap = document.getElementById('authWrap');
-    const loginPanel = document.getElementById('loginPanel');
-    const registerPanel = document.getElementById('registerPanel');
-    const mainContent = document.getElementById('mainContent');
+    // refs
     const tabLogin = document.getElementById('tabLogin');
     const tabRegister = document.getElementById('tabRegister');
+    const teacherControls = document.getElementById('teacherControls');
     const userInfo = document.getElementById('userInfo');
     const logoutBtn = document.getElementById('logoutBtn');
     const themeToggle = document.getElementById('themeToggle');
+    const banner = document.getElementById('banner');
+
     const announcementsList = document.getElementById('announcementsList');
     const homeworkList = document.getElementById('homeworkList');
     const submissionsList = document.getElementById('submissionsList');
-
-    const loginForm = document.getElementById('loginForm');
-    const registerForm = document.getElementById('registerForm');
-    const homeworkForm = document.getElementById('homeworkForm');
-
     const loadMoreAnnouncements = document.getElementById('loadMoreAnnouncements');
     const loadMoreHomeworks = document.getElementById('loadMoreHomeworks');
 
-    const PAGE_SIZE = 10;
-    let annCursor = null, hwCursor = null;
-    let currentUser = null, currentRole = null;
-    let annUnsub = null, hwUnsub = null, subUnsub = null;
+    const PAGE_SIZE = 10; let annCursor=null, hwCursor=null; let currentRole=null, currentUser=null; let annUnsub=null, hwUnsub=null, subUnsub=null;
 
-    // helpers
-    function safeText(s){ return String(s || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-    function setAuthVisible(signedIn){
-      authWrap.hidden = signedIn;
-      mainContent.hidden = !signedIn;
-    }
+    // better escape
+    function escapeHtml(s){ return String(s||'').replace(/[&<>"]+/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]) || ''); }
 
-    // theme toggle
-    themeToggle.addEventListener('click', () => {
+    // banner helper
+    function showBanner(msg, timeout=4000){ if(!banner) return; banner.textContent = msg; banner.style.display='block'; if(timeout) setTimeout(()=>{ banner.style.display='none'; banner.textContent=''; }, timeout); }
+
+    // theme
+    if(themeToggle) themeToggle.addEventListener('click', ()=>{
       document.body.classList.toggle('dark');
       themeToggle.setAttribute('aria-pressed', String(document.body.classList.contains('dark')));
     });
 
+    // named learner restriction handlers so we can remove them
+    let learnerContextHandler=null, learnerCopyHandler=null, learnerKeyHandler=null;
+    function applyLearnerClientRestrictions(){
+      // guard
+      if(learnerContextHandler) return;
+      learnerContextHandler = e=>{ e.preventDefault(); };
+      learnerCopyHandler = e=>{ e.preventDefault(); };
+      learnerKeyHandler = e=>{
+        if(e.key === 'F12') e.preventDefault();
+        if(e.ctrlKey && e.shiftKey && ['I','J','C'].includes(e.key.toUpperCase())) e.preventDefault();
+        if(e.ctrlKey && e.key.toLowerCase() === 'u') e.preventDefault();
+      };
+      window.addEventListener('contextmenu', learnerContextHandler, {capture:true});
+      ['copy','cut','paste'].forEach(evt=> window.addEventListener(evt, learnerCopyHandler, {capture:true}));
+      window.addEventListener('keydown', learnerKeyHandler, {capture:true});
+      document.querySelector('.container')?.classList.add('no-select');
+      showBanner('Learner restrictions applied (client-side only). Server rules still required.', 3000);
+    }
+    function removeLearnerRestrictions(){
+      if(learnerContextHandler){ window.removeEventListener('contextmenu', learnerContextHandler, {capture:true}); learnerContextHandler=null; }
+      if(learnerCopyHandler){ ['copy','cut','paste'].forEach(evt=> window.removeEventListener(evt, learnerCopyHandler, {capture:true})); learnerCopyHandler=null; }
+      if(learnerKeyHandler){ window.removeEventListener('keydown', learnerKeyHandler, {capture:true}); learnerKeyHandler=null; }
+      document.querySelector('.container')?.classList.remove('no-select');
+    }
+
     // register
-    registerForm.addEventListener('submit', async (e) => {
+    const registerForm = document.getElementById('registerForm');
+    if(registerForm) registerForm.addEventListener('submit', async (e)=>{
       e.preventDefault();
       const name = document.getElementById('registerName').value.trim();
       const school = document.getElementById('registerSchool').value.trim();
       const email = document.getElementById('registerEmail').value.trim();
       const pass = document.getElementById('registerPassword').value;
       const role = document.getElementById('registerType').value;
-      const errEl = document.getElementById('registerError');
-      const okEl = document.getElementById('registerSuccess');
-      errEl.textContent = ''; okEl.textContent = '';
-      if (!name || !school || !email || !pass || pass.length < 6 || !role) {
-        errEl.textContent = 'Please fill all fields and choose a role (password min 6 chars).';
-        return;
-      }
-      try {
-        const cred = await createUserWithEmailAndPassword(auth, email, pass);
-        await setDoc(doc(db, 'users', cred.user.uid), { name, school, email, role, createdAt: serverTimestamp() });
-        if (role === 'teacher') {
-          await sendEmailVerification(cred.user);
-          okEl.textContent = 'Account created. Verification email sent — please verify to enable posting.';
-        } else {
-          okEl.textContent = 'Account created. You can now log in.';
-        }
-        document.getElementById('registerPassword').value = '';
-        // switch to login panel for convenience
-        showPanel('login');
-      } catch (err) {
-        console.error('register error', err);
-        errEl.textContent = (err && err.code === 'auth/email-already-in-use') ? 'Email already in use. Please login.' : (err.message || 'Registration failed.');
-      }
+      const err = document.getElementById('registerError'); const ok = document.getElementById('registerSuccess'); if(err) err.textContent=''; if(ok) ok.textContent='';
+      if(!name||!school||!email||!pass||pass.length<6||!role){ if(err) err.textContent='Fill all fields correctly'; return; }
+      try{
+        const cred = await createUserWithEmailAndPassword(auth,email,pass);
+        await setDoc(doc(db,'users',cred.user.uid),{name,school,email,role,createdAt:serverTimestamp()});
+        if(role==='teacher'){ await sendEmailVerification(cred.user); if(ok) ok.textContent='Account created. Verification email sent.'; }
+        else { if(ok) ok.textContent='Account created. You can now log in.'; }
+        document.getElementById('registerPassword').value='';
+        showPanel('login', tabLogin);
+      }catch(x){ console.error(x); if(err) err.textContent = x.message || 'Create account failed'; }
     });
 
     // login
-    loginForm.addEventListener('submit', async (e) => {
+    const loginForm = document.getElementById('loginForm');
+    if(loginForm) loginForm.addEventListener('submit', async (e)=>{
       e.preventDefault();
       const email = document.getElementById('loginEmail').value.trim();
       const pass = document.getElementById('loginPassword').value;
-      const errEl = document.getElementById('loginError');
-      errEl.textContent = '';
-      if (!email || !pass) { errEl.textContent = 'Enter both email and password.'; return; }
-      try {
-        await signInWithEmailAndPassword(auth, email, pass);
-        // onAuthStateChanged will take over UI
-      } catch (err) {
-        console.error('login error', err);
-        if (err && err.code) {
-          switch (err.code) {
-            case 'auth/invalid-email': errEl.textContent = 'Invalid email address.'; break;
-            case 'auth/user-disabled': errEl.textContent = 'This account was disabled.'; break;
-            case 'auth/user-not-found': errEl.textContent = 'No account with that email.'; break;
-            case 'auth/wrong-password': errEl.textContent = 'Incorrect password.'; break;
-            default: errEl.textContent = err.message || 'Login error.';
-          }
-        } else {
-          errEl.textContent = err.message || 'Login error.';
-        }
-      }
+      const err = document.getElementById('loginError'); if(err) err.textContent = '';
+      if(!email||!pass){ if(err) err.textContent='Please enter both email and password.'; return; }
+      try{ await signInWithEmailAndPassword(auth,email,pass); } catch(x){ console.error('login',x); if(err) err.textContent = x.message || 'Login failed'; }
     });
 
-    // forgot
-    document.getElementById('forgotBtn').addEventListener('click', async () => {
-      const email = document.getElementById('loginEmail').value.trim();
-      if (!email) return alert('Type your email first to receive reset link.');
-      try {
-        await sendPasswordResetEmail(auth, email);
-        alert('Password reset email sent. Check your inbox.');
-      } catch (err) {
-        console.error('reset error', err);
-        alert('Could not send reset email: ' + (err.message || err.code || 'unknown'));
-      }
+    // logout
+    if(logoutBtn) logoutBtn.addEventListener('click', async ()=>{ try{ await signOut(auth); removeLearnerRestrictions(); showBanner('Signed out'); }catch(e){ console.error('signout',e); } });
+
+    // post announcement
+    const postAnnouncement = document.getElementById('postAnnouncement'); if(postAnnouncement) postAnnouncement.addEventListener('click', async ()=>{
+      if(currentRole!=='teacher'){ showBanner('Only teachers can post announcements'); return; }
+      if(!currentUser.emailVerified){ showBanner('Please verify email before posting'); return; }
+      const text = document.getElementById('announcementText').value.trim(); if(!text) return showBanner('Type announcement');
+      try{ await addDoc(collection(db,'announcements'),{text,author:currentUser.email,date:serverTimestamp(),persistent:true}); document.getElementById('announcementText').value=''; showBanner('Announcement posted'); }catch(e){ console.error(e); showBanner('Failed to post'); }
     });
 
-    logoutBtn.addEventListener('click', () => signOut(auth));
-
-    // posting announcement
-    document.getElementById('postAnnouncement').addEventListener('click', async () => {
-      if (currentRole !== 'teacher') return alert('Only teachers can post announcements.');
-      if (!currentUser.emailVerified) return alert('Please verify your teacher email before posting.');
-      const text = document.getElementById('announcementText').value.trim();
-      if (!text) return alert('Type announcement');
-      try {
-        await addDoc(collection(db, 'announcements'), { text, author: currentUser.email, date: serverTimestamp(), persistent: true });
-        document.getElementById('announcementText').value = '';
-        document.getElementById('announceMsg').textContent = 'Posted';
-        setTimeout(()=>document.getElementById('announceMsg').textContent='', 2500);
-      } catch (err) {
-        console.error('post announcement error', err);
-        alert('Posting failed: ' + (err.message || err.code || 'unknown'));
-      }
+    // post homework
+    const hwForm = document.getElementById('homeworkForm'); if(hwForm) hwForm.addEventListener('submit', async (e)=>{
+      e.preventDefault(); if(currentRole!=='teacher'){ showBanner('Only teachers'); return; } if(!currentUser.emailVerified){ showBanner('Verify email'); return; }
+      const title=document.getElementById('hwTitle').value.trim(); const desc=document.getElementById('hwDescription').value.trim(); const due=document.getElementById('hwDue').value||null; const grade=document.getElementById('hwGrade').value||null; const msg=document.getElementById('hwMsg'); if(msg) msg.textContent='';
+      if(!title||!desc){ if(msg) msg.textContent='Add title and description'; return; }
+      try{ await addDoc(collection(db,'homeworks'),{title,desc,due,grade,author:currentUser.email,createdAt:serverTimestamp(),persistent:true}); if(msg) msg.textContent='Saved — persistent.'; hwForm.reset(); } catch(e){ console.error(e); if(msg) msg.textContent='Save failed'; }
     });
 
-    // posting homework
-    homeworkForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      if (currentRole !== 'teacher') return alert('Only teachers can post homework.');
-      if (!currentUser.emailVerified) return alert('Please verify your teacher email before posting.');
-      const title = document.getElementById('hwTitle').value.trim();
-      const desc = document.getElementById('hwDescription').value.trim();
-      const due = document.getElementById('hwDue').value || null;
-      const grade = document.getElementById('hwGrade').value || null;
-      if (!title || !desc) return document.getElementById('hwMsg').textContent = 'Add title and description.';
-      try {
-        await addDoc(collection(db, 'homeworks'), { title, desc, due, grade, author: currentUser.email, createdAt: serverTimestamp(), persistent: true });
-        document.getElementById('hwMsg').textContent = 'Saved — persistent.';
-        homeworkForm.reset();
-        setTimeout(()=>document.getElementById('hwMsg').textContent='', 3000);
-      } catch (err) {
-        console.error('save hw', err);
-        document.getElementById('hwMsg').textContent = 'Save failed.';
-      }
-    });
+    // submit answer
+    window.submitAnswer = async function(homeworkId, homeworkTitle){ if(currentRole!=='learner'){ showBanner('Only learners can submit'); return; } const el=document.getElementById('answer_for_'+homeworkId); if(!el) return showBanner('Answer field not found'); const txt=el.value.trim(); if(!txt) return showBanner('Type your answer'); try{ await addDoc(collection(db,'submissions'),{homeworkId,homeworkTitle,answer:txt,student:currentUser.email,createdAt:serverTimestamp(),marked:false}); el.value=''; showBanner('Submitted — only teacher can view'); }catch(e){ console.error(e); showBanner('Submit failed'); } };
 
-    // learners submit answers — expose global so inline onclick works
-    async function submitAnswer(homeworkId, homeworkTitle) {
-      if (currentRole !== 'learner') return alert('Only learners can submit answers.');
-      const el = document.getElementById('answer_for_' + homeworkId);
-      if (!el) return alert('Answer field not found.');
-      const txt = el.value.trim();
-      if (!txt) return alert('Type your answer');
-      try {
-        await addDoc(collection(db, 'submissions'), { homeworkId, homeworkTitle, answer: txt, student: currentUser.email, createdAt: serverTimestamp(), marked: false });
-        el.value = '';
-        alert('Answer submitted — only the teacher can view it.');
-      } catch (err) {
-        console.error('submit answer', err);
-        alert('Submit failed: ' + (err.message || err.code || 'unknown'));
-      }
-    }
-    window.submitAnswer = submitAnswer;
-
-    // rendering helpers
-    function renderAnnouncement(d){
-      const el = document.createElement('div'); el.className='list-item';
-      el.innerHTML = `<div>${safeText(d.text||'')}</div><div class='meta'>${safeText(d.author||'')}${d.date && d.date.toDate ? ' • ' + safeText(d.date.toDate().toLocaleString()) : ''}${d.persistent ? ' • persistent' : ''}</div>`;
-      return el;
-    }
-    function renderHomework(d){
-      const el = document.createElement('div'); el.className='list-item';
-      let inner = `<strong>${safeText(d.title||'')}</strong><div style="margin-top:8px">${safeText(d.desc||'')}</div><div class='meta'>${d.grade?safeText(d.grade)+' • ':''}${d.due? 'Due: '+safeText(d.due) : ''} • ${safeText(d.author||'')}</div>`;
-      if (currentRole === 'learner') {
-        inner += `<div style="margin-top:8px"><textarea id="answer_for_${d._id}" placeholder="Type your answer" maxlength="6000"></textarea><div style="margin-top:8px"><button class="primary" onclick="submitAnswer('${d._id}', ${JSON.stringify(d.title)})">Submit Answer</button></div></div>`;
-      }
-      el.innerHTML = inner;
-      return el;
-    }
-    function renderSubmission(s, id){
-      const el = document.createElement('div'); el.className='list-item';
-      el.innerHTML = `<div><strong>${safeText(s.homeworkTitle||'')}</strong> — <span class='muted'>${safeText(s.student||'')}</span></div><div style='margin-top:8px'>${safeText(s.answer||'')}</div><div class='meta'>${s.createdAt && s.createdAt.toDate ? safeText(s.createdAt.toDate().toLocaleString()) : ''} • Marked: ${s.marked ? 'Yes' : 'No'}</div>`;
-      const btnWrap = document.createElement('div'); btnWrap.style.marginTop = '8px';
-      const markBtn = document.createElement('button'); markBtn.className = 'ghost';
-      markBtn.textContent = s.marked ? 'Unmark' : 'Mark as Reviewed';
-      markBtn.addEventListener('click', async () => {
-        try {
-          await updateDoc(doc(db, 'submissions', id), { marked: !s.marked, markedBy: currentUser.email, markedAt: serverTimestamp() });
-        } catch (err) { console.error('mark error', err); alert('Failed to update'); }
-      });
-      btnWrap.appendChild(markBtn); el.appendChild(btnWrap);
-      return el;
-    }
+    // render helpers (uses safe escapeHtml)
+    function renderAnnouncement(d){ const el=document.createElement('div'); el.className='list-item'; el.innerHTML=`<div>${escapeHtml(d.text||'')}</div><div class='meta'>${escapeHtml(d.author||'')}${d.date&&d.date.toDate? ' • '+escapeHtml(d.date.toDate().toLocaleString()) : ''}${d.persistent? ' • persistent':''}</div>`; return el; }
+    function renderHomework(d){ const el=document.createElement('div'); el.className='list-item'; let inner=`<strong>${escapeHtml(d.title||'')}</strong><div style="margin-top:6px">${escapeHtml(d.desc||'')}</div><div class='meta'>${d.grade?escapeHtml(d.grade)+' • ':''}${d.due? 'Due: '+escapeHtml(d.due):''} • ${escapeHtml(d.author||'')}</div>`; if(currentRole==='learner'){ inner+=`<div style="margin-top:8px"><textarea id="answer_for_${d._id}" placeholder="Type your answer" maxlength="6000"></textarea><div style="margin-top:6px"><button class=\"primary\" onclick=\"submitAnswer('${d._id}', ${JSON.stringify(d.title)})\">Submit Answer</button></div></div>`; } el.innerHTML=inner; return el; }
+    function renderSubmission(s,id){ const el=document.createElement('div'); el.className='list-item'; el.innerHTML=`<div><strong>${escapeHtml(s.homeworkTitle||'')}</strong> — <span class='muted'>${escapeHtml(s.student||'')}</span></div><div style='margin-top:6px'>${escapeHtml(s.answer||'')}</div><div class='meta'>${s.createdAt&&s.createdAt.toDate?escapeHtml(s.createdAt.toDate().toLocaleString()):''} • Marked: ${s.marked? 'Yes':'No'}</div>`; const btnWrap=document.createElement('div'); btnWrap.style.marginTop='8px'; const markBtn=document.createElement('button'); markBtn.className='ghost'; markBtn.textContent=s.marked?'Unmark':'Mark as Reviewed'; markBtn.addEventListener('click',async()=>{ try{ await updateDoc(doc(db,'submissions',id),{marked:!s.marked,markedBy:currentUser.email,markedAt:serverTimestamp()}); showBanner('Updated'); }catch(e){ console.error(e); showBanner('Failed to update'); }}); btnWrap.appendChild(markBtn); el.appendChild(btnWrap); return el; }
 
     // listeners
     function startListeners(){
       // announcements
-      try {
-        const annQ = query(collection(db, 'announcements'), orderBy('date', 'desc'), limit(PAGE_SIZE));
-        annUnsub = onSnapshot(annQ, snap => {
-          announcementsList.innerHTML = '';
-          snap.forEach(docSnap => {
-            const d = docSnap.data(); d._id = docSnap.id;
-            announcementsList.appendChild(renderAnnouncement(d));
-          });
-          annCursor = snap.docs.length ? snap.docs[snap.docs.length - 1] : null;
-        }, err => {
-          console.error('ann snapshot', err);
-          announcementsList.innerHTML = '<div class="muted">Unable to load announcements.</div>';
-        });
-      } catch (err) { console.warn('ann listener skipped', err); }
+      try{
+        const annQ=query(collection(db,'announcements'), orderBy('date','desc'), limit(PAGE_SIZE));
+        annUnsub = onSnapshot(annQ, snap=>{
+          announcementsList.innerHTML='';
+          snap.forEach(docSnap=>{ const d=docSnap.data(); d._id=docSnap.id; announcementsList.appendChild(renderAnnouncement(d)); });
+          annCursor = snap.docs.length? snap.docs[snap.docs.length-1] : null;
+          // disable load more if no cursor
+          if(!annCursor) loadMoreAnnouncements?.setAttribute('disabled','true'); else loadMoreAnnouncements?.removeAttribute('disabled');
+        }, err=>{ console.error('Ann snapshot',err); announcementsList.innerHTML='<div class="muted">Failed to load announcements</div>'; });
+      }catch(e){ console.warn('ann listener',e); }
 
       // homeworks
-      try {
-        const hwQ = query(collection(db, 'homeworks'), orderBy('createdAt', 'desc'), limit(PAGE_SIZE));
-        hwUnsub = onSnapshot(hwQ, snap => {
-          homeworkList.innerHTML = '';
-          snap.forEach(docSnap => {
-            const d = docSnap.data(); d._id = docSnap.id;
-            homeworkList.appendChild(renderHomework(d));
-          });
-          hwCursor = snap.docs.length ? snap.docs[snap.docs.length - 1] : null;
-        }, err => {
-          console.error('hw snapshot', err);
-          homeworkList.innerHTML = '<div class="muted">Unable to load homeworks.</div>';
-        });
-      } catch (err) { console.warn('hw listener skipped', err); }
+      try{
+        const hwQ=query(collection(db,'homeworks'), orderBy('createdAt','desc'), limit(PAGE_SIZE));
+        hwUnsub = onSnapshot(hwQ, snap=>{
+          homeworkList.innerHTML='';
+          snap.forEach(docSnap=>{ const d=docSnap.data(); d._id=docSnap.id; homeworkList.appendChild(renderHomework(d)); });
+          hwCursor = snap.docs.length? snap.docs[snap.docs.length-1]:null;
+          if(!hwCursor) loadMoreHomeworks?.setAttribute('disabled','true'); else loadMoreHomeworks?.removeAttribute('disabled');
+        }, err=>{ console.error('HW snapshot',err); homeworkList.innerHTML='<div class="muted">Failed to load homeworks</div>'; });
+      }catch(e){ console.warn('hw listener',e); }
 
-      // submissions only for teachers
-      if (currentRole === 'teacher') {
-        try {
-          const subQ = query(collection(db, 'submissions'), orderBy('createdAt', 'desc'), limit(200));
-          subUnsub = onSnapshot(subQ, snap => {
-            submissionsList.innerHTML = '';
-            snap.forEach(docSnap => {
-              const s = docSnap.data(); s._id = docSnap.id;
-              submissionsList.appendChild(renderSubmission(s, docSnap.id));
-            });
-          }, err => {
-            console.error('sub snapshot', err);
-            submissionsList.innerHTML = '<div class="muted">Unable to load submissions.</div>';
-          });
-        } catch (err) { console.warn('sub listener skipped', err); }
+      // submissions (teachers only)
+      if(currentRole==='teacher'){
+        try{
+          const subQ=query(collection(db,'submissions'), orderBy('createdAt','desc'), limit(100));
+          subUnsub = onSnapshot(subQ, snap=>{
+            submissionsList.innerHTML='';
+            snap.forEach(docSnap=>{ const s=docSnap.data(); s._id=docSnap.id; submissionsList.appendChild(renderSubmission(s, docSnap.id)); });
+          }, err=>{ console.error('Sub snapshot',err); submissionsList.innerHTML='<div class="muted">Failed to load submissions</div>'; });
+        }catch(e){ console.warn('sub listener',e); }
       }
     }
+    function stopListeners(){ if(annUnsub) annUnsub(); if(hwUnsub) hwUnsub(); if(subUnsub) subUnsub(); annUnsub=hwUnsub=subUnsub=null; }
 
-    function stopListeners(){
-      if (annUnsub) annUnsub(); if (hwUnsub) hwUnsub(); if (subUnsub) subUnsub();
-      annUnsub = hwUnsub = subUnsub = null;
-    }
+    // load more
+    loadMoreAnnouncements?.addEventListener('click', async ()=>{ if(!annCursor) return; try{ const moreQ=query(collection(db,'announcements'), orderBy('date','desc'), startAfter(annCursor), limit(PAGE_SIZE)); const snap=await getDocs(moreQ); snap.forEach(docSnap=>{ const d=docSnap.data(); d._id=docSnap.id; announcementsList.appendChild(renderAnnouncement(d)); }); annCursor = snap.docs.length? snap.docs[snap.docs.length-1]:annCursor; }catch(e){ console.error(e); } });
+    loadMoreHomeworks?.addEventListener('click', async ()=>{ if(!hwCursor) return; try{ const moreQ=query(collection(db,'homeworks'), orderBy('createdAt','desc'), startAfter(hwCursor), limit(PAGE_SIZE)); const snap=await getDocs(moreQ); snap.forEach(docSnap=>{ const d=docSnap.data(); d._id=docSnap.id; homeworkList.appendChild(renderHomework(d)); }); hwCursor = snap.docs.length? snap.docs[snap.docs.length-1]:hwCursor; }catch(e){ console.error(e); } });
 
-    // load more actions
-    if (loadMoreAnnouncements) loadMoreAnnouncements.addEventListener('click', async () => {
-      if (!annCursor) return;
-      try {
-        const moreQ = query(collection(db, 'announcements'), orderBy('date', 'desc'), startAfter(annCursor), limit(PAGE_SIZE));
-        const snap = await getDocs(moreQ);
-        snap.forEach(docSnap => {
-          const d = docSnap.data(); d._id = docSnap.id;
-          announcementsList.appendChild(renderAnnouncement(d));
-        });
-        annCursor = snap.docs.length ? snap.docs[snap.docs.length - 1] : annCursor;
-      } catch (err) { console.error(err); }
-    });
-    if (loadMoreHomeworks) loadMoreHomeworks.addEventListener('click', async () => {
-      if (!hwCursor) return;
-      try {
-        const moreQ = query(collection(db, 'homeworks'), orderBy('createdAt', 'desc'), startAfter(hwCursor), limit(PAGE_SIZE));
-        const snap = await getDocs(moreQ);
-        snap.forEach(docSnap => {
-          const d = docSnap.data(); d._id = docSnap.id;
-          homeworkList.appendChild(renderHomework(d));
-        });
-        hwCursor = snap.docs.length ? snap.docs[snap.docs.length - 1] : hwCursor;
-      } catch (err) { console.error(err); }
-    });
-
-    // auth state changes
-    onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        currentUser = null; currentRole = null;
-        userInfo.textContent = 'Not signed in';
-        logoutBtn.hidden = true;
-        setAuthVisible(false);
-        stopListeners();
-        // restore tabs and restrictions if any
-        document.getElementById('tabLogin').hidden = false;
-        document.getElementById('tabRegister').hidden = false;
-        return;
-      }
+    // auth state
+    onAuthStateChanged(auth, async (user)=>{
+      if(!user){ currentUser=null; currentRole=null; userInfo.textContent='Not signed in'; logoutBtn.classList.add('hidden'); document.getElementById('authWrap').classList.remove('hidden'); teacherControls.classList.add('hidden'); stopListeners(); document.getElementById('tabLogin').classList.remove('hidden'); document.getElementById('tabRegister').classList.remove('hidden'); removeLearnerRestrictions(); return; }
       currentUser = user;
-      try {
-        const udoc = await getDoc(doc(db, 'users', user.uid));
-        const profile = udoc.exists() ? udoc.data() : null;
-        currentRole = profile?.role || profile?.userType || 'learner';
-        userInfo.innerHTML = `<div><strong>${safeText(user.email)}</strong></div><div class="muted">Role: ${safeText(currentRole)}</div>`;
-      } catch (err) {
-        console.warn('fetch profile failed', err);
-        currentRole = 'learner';
-        userInfo.textContent = safeText(user.email || 'User');
-      }
+      try{ const udoc = await getDoc(doc(db,'users',user.uid)); const profile = udoc.exists()? udoc.data():null; currentRole = profile?.role || profile?.userType || 'learner'; userInfo.innerHTML = `<strong>${escapeHtml(user.email)}</strong><div class='muted'>Role: ${escapeHtml(currentRole)}</div>`; }catch(err){ console.warn('fetch profile failed',err); currentRole='learner'; userInfo.textContent = escapeHtml(user.email||'User'); }
 
-      setAuthVisible(true);
-      logoutBtn.hidden = false;
-
-      if (currentRole === 'teacher') {
-        document.getElementById('teacherControls').hidden = false;
-        const canPost = user.emailVerified;
-        document.getElementById('postAnnouncement').disabled = !canPost;
-        Array.from(document.querySelectorAll('#homeworkForm button[type=submit]')).forEach(b => b.disabled = !canPost);
-        if (!canPost) alert('Teacher account requires email verification to post. Please check your inbox.');
-      } else {
-        document.getElementById('teacherControls').hidden = true;
-        // hide auth tabs for learners
-        document.getElementById('tabLogin').hidden = true;
-        document.getElementById('tabRegister').hidden = true;
-        // apply light client restrictions (non-secure: server rules are required for real protection)
-        // prevent context menu and copy/paste on client side
-        window.addEventListener('contextmenu', e => e.preventDefault(), { capture: true });
-        ['copy','cut','paste'].forEach(evt => window.addEventListener(evt, e => e.preventDefault(), { capture: true }));
-        document.querySelector('.container') && document.querySelector('.container').classList.add('no-select');
-      }
+      document.getElementById('authWrap').classList.add('hidden'); logoutBtn.classList.remove('hidden');
+      if(currentRole==='teacher'){ teacherControls.classList.remove('hidden'); removeLearnerRestrictions(); if(!user.emailVerified){ document.getElementById('postAnnouncement').disabled=true; const btn = document.querySelector('#homeworkForm button[type=submit]'); if(btn) btn.disabled=true; showBanner('Teacher accounts require email verification to post. Check your inbox.', 6000); } else { document.getElementById('postAnnouncement').disabled=false; const btn = document.querySelector('#homeworkForm button[type=submit]'); if(btn) btn.disabled=false; } }
+      else { teacherControls.classList.add('hidden'); document.getElementById('tabLogin').classList.add('hidden'); document.getElementById('tabRegister').classList.add('hidden'); applyLearnerClientRestrictions(); }
 
       startListeners();
     });
 
-    // initial UI state
-    showPanel('login');
-    setAuthVisible(false);
+    // initial set
+    document.addEventListener('DOMContentLoaded', ()=>{ showPanel('login', document.getElementById('tabLogin')); });
+
   </script>
 </body>
 </html>
