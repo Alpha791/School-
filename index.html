@@ -6,11 +6,14 @@
   <title>School Project — Teacher Homework & Announcements</title>
   <style>
     :root{
-      --max-width:1100px; --accent:#0066ff; --muted:#6b7280; --card:#fff; --bg:#f3f4f6;
+      --max-width:1100px; --accent:#0066ff; --muted:#6b7280; --card:#fff; --bg:#f3f4f6; --text:#0f172a;
+      --bg-dark:#0b1220; --card-dark:#071022; --text-dark:#e6eef8;
     }
     *{box-sizing:border-box}
-    body{font-family:Inter, Roboto, system-ui, Arial, sans-serif;margin:12px;background:var(--bg);color:#0f172a;display:flex;justify-content:center}
+    body{font-family:Inter, Roboto, system-ui, Arial, sans-serif;margin:12px;background:var(--bg);color:var(--text);display:flex;justify-content:center}
+    body.dark{background:var(--bg-dark);color:var(--text-dark)}
     .container{width:100%;max-width:var(--max-width);background:var(--card);padding:18px;border-radius:12px;box-shadow:0 8px 30px rgba(2,6,23,0.06)}
+    body.dark .container{background:var(--card-dark);box-shadow:none}
     header{display:flex;align-items:center;justify-content:space-between;gap:12px}
     h1{font-size:1.25rem;margin:0}
 
@@ -21,14 +24,17 @@
     /* forms */
     form{margin:0}
     .card{background:#fff;padding:12px;border-radius:10px;border:1px solid #eef2ff}
+    body.dark .card{background:transparent;border-color:rgba(255,255,255,0.06)}
     .form-row{margin:8px 0}
     input,select,textarea,button{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e7eb;font-size:0.95rem}
+    body.dark input, body.dark select, body.dark textarea, body.dark button{background:transparent;border-color:rgba(255,255,255,0.06);color:var(--text-dark)}
     textarea{min-height:100px;resize:vertical}
     .row{display:flex;gap:8px}
     .row .col{flex:1}
 
     button.primary{background:var(--accent);color:#fff;border:none}
     button.ghost{background:transparent;border:1px solid #e6e7eb}
+    body.dark .ghost{border-color:rgba(255,255,255,0.06)}
 
     /* tabs */
     .tabs{display:flex;gap:8px}
@@ -37,21 +43,30 @@
 
     /* lists */
     .list-item{padding:10px;border-radius:8px;border:1px solid #eef2ff;background:linear-gradient(180deg,#fff,#fbfdff);margin-bottom:10px}
+    body.dark .list-item{background:transparent;border-color:rgba(255,255,255,0.03)}
     .meta{font-size:0.85rem;color:var(--muted);margin-top:6px}
 
     /* tiny helpers */
     .muted{color:var(--muted)}
     .hidden{display:none}
 
-    /* performance: keep layout simple, remove heavy shadows on small screens */
+    /* small screens */
     @media (max-width:480px){.container{padding:12px;border-radius:8px}}
+
+    /* disable selection when requested */
+    .no-select{user-select:none;-webkit-user-select:none}
+
+    /* subtle responsiveness for buttons */
+    .small-inline{display:inline-block;width:auto}
   </style>
 </head>
 <body>
   <div class="container">
     <header>
       <h1>School App — Homework & Announcements</h1>
-      <div id="debug" style="font-size:0.85rem;color:var(--muted)"></div>
+      <div>
+        <button id="themeToggle" type="button" class="small-inline">Toggle Dark / Light</button>
+      </div>
     </header>
 
     <!-- Auth area -->
@@ -63,17 +78,19 @@
 
       <div id="loginPanel">
         <form id="loginForm">
-          <div class="form-row"><input id="loginEmail" type="email" placeholder="Email" required /></div>
-          <div class="form-row"><input id="loginPassword" type="password" placeholder="Password" required /></div>
-          <div class="form-row row"><button class="primary" type="submit">Login</button><button type="button" class="ghost" onclick="fillTestCredentials('teacher')">Test Teacher</button></div>
+          <div class="form-row"><input id="loginEmail" type="email" placeholder="Email" required autocomplete="username" /></div>
+          <div class="form-row"><input id="loginPassword" type="password" placeholder="Password" required autocomplete="current-password" /></div>
+          <div class="form-row row"><button class="primary" type="submit">Login</button></div>
           <div id="loginError" class="muted" style="color:#b91c1c;margin-top:6px"></div>
         </form>
       </div>
 
       <div id="registerPanel" class="hidden">
         <form id="registerForm">
-          <div class="form-row"><input id="registerEmail" type="email" placeholder="Email" required /></div>
-          <div class="form-row"><input id="registerPassword" type="password" placeholder="Password (min 6)" required /></div>
+          <div class="form-row"><input id="registerName" type="text" placeholder="Full name" required autocomplete="name" /></div>
+          <div class="form-row"><input id="registerSchool" type="text" placeholder="School / Institution" required autocomplete="organization" /></div>
+          <div class="form-row"><input id="registerEmail" type="email" placeholder="Email" required autocomplete="email" /></div>
+          <div class="form-row"><input id="registerPassword" type="password" placeholder="Password (min 6)" required autocomplete="new-password" /></div>
           <div class="form-row">
             <select id="registerType" required>
               <option value="">Select role</option>
@@ -83,6 +100,7 @@
           </div>
           <div class="form-row"><button class="primary" type="submit">Create account</button></div>
           <div id="registerError" class="muted" style="color:#b91c1c;margin-top:6px"></div>
+          <div id="registerSuccess" class="muted" style="color:#16a34a;margin-top:6px"></div>
         </form>
       </div>
     </section>
@@ -109,6 +127,11 @@
             <div style="margin-top:8px"><button class="primary" type="submit">Save Homework (persistent)</button></div>
             <div id="hwMsg" class="muted" style="margin-top:8px"></div>
           </form>
+
+          <hr style="margin:12px 0" />
+
+          <h3>Submitted Answers (Teachers only)</h3>
+          <div id="submissionsList"></div>
         </section>
 
         <!-- Announcements list -->
@@ -134,21 +157,18 @@
         </section>
 
         <section class="card" style="margin-top:12px">
-          <strong>Performance & persistence</strong>
-          <p class="muted" style="font-size:0.9rem">Homeworks are saved with <code>persistent: true</code> flag in Firestore. The app does not delete them automatically — ensure your Firestore rules or scheduled functions are not configured to remove documents.</p>
+          <strong>Quick actions</strong>
+          <p class="muted" style="font-size:0.9rem">Dark/Light mode and secure learner restrictions are enabled. Teachers can view and mark submissions.</p>
         </section>
       </aside>
     </div>
   </div>
 
   <script type="module">
-    // show simple debug
-    document.getElementById('debug').textContent = 'Client ready';
-
     // firebase modular imports
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js';
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js';
-    import { getFirestore, collection, addDoc, setDoc, doc, serverTimestamp, query, orderBy, limit, onSnapshot, getDocs, startAfter } from 'https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js';
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendEmailVerification } from 'https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js';
+    import { getFirestore, collection, addDoc, setDoc, doc, serverTimestamp, query, orderBy, limit, onSnapshot, getDocs, startAfter, getDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js';
 
     // config (kept as provided)
     const firebaseConfig = {
@@ -173,14 +193,20 @@
     const teacherControls = document.getElementById('teacherControls');
     const userInfo = document.getElementById('userInfo');
     const logoutBtn = document.getElementById('logoutBtn');
+    const themeToggle = document.getElementById('themeToggle');
 
     // lists + pagination cursors
     const announcementsList = document.getElementById('announcementsList');
     const homeworkList = document.getElementById('homeworkList');
+    const submissionsList = document.getElementById('submissionsList');
     const loadMoreAnnouncements = document.getElementById('loadMoreAnnouncements');
     const loadMoreHomeworks = document.getElementById('loadMoreHomeworks');
     let annCursor = null, hwCursor = null;
     const PAGE_SIZE = 10; // load in pages for performance
+
+    // state
+    let currentRole = null; // 'teacher' or 'learner'
+    let currentUser = null;
 
     // helper: toggle tabs
     window.showTab = (name, btn)=>{
@@ -190,25 +216,30 @@
       else { registerPanel.classList.remove('hidden'); loginPanel.classList.add('hidden'); }
     };
 
-    // quick fill
-    window.fillTestCredentials = (role)=>{
-      document.getElementById('registerEmail').value = role==='teacher' ? 'teacher@school.com' : 'student@school.com';
-      document.getElementById('registerPassword').value = '123456';
-      document.getElementById('registerType').value = role==='teacher' ? 'teacher' : 'learner';
-    };
-
     // auth handlers
     document.getElementById('registerForm').addEventListener('submit', async (e)=>{
       e.preventDefault();
+      const name = document.getElementById('registerName').value.trim();
+      const school = document.getElementById('registerSchool').value.trim();
       const email = document.getElementById('registerEmail').value.trim();
       const pass = document.getElementById('registerPassword').value;
       const role = document.getElementById('registerType').value;
       const err = document.getElementById('registerError'); err.textContent='';
-      if(!email||!pass||pass.length<6||!role){ err.textContent='Fill all fields correctly'; return; }
+      const success = document.getElementById('registerSuccess'); success.textContent='';
+      if(!name||!school||!email||!pass||pass.length<6||!role){ err.textContent='Fill all fields correctly'; return; }
       try{
         const cred = await createUserWithEmailAndPassword(auth,email,pass);
-        // save profile with role
-        await setDoc(doc(db,'users',cred.user.uid),{email,role,createdAt:serverTimestamp()});
+        // save profile with role and extra metadata
+        await setDoc(doc(db,'users',cred.user.uid),{name,school,email,role,createdAt:serverTimestamp()});
+        // send verification email for teachers to make it more secure
+        if(role === 'teacher'){
+          await sendEmailVerification(cred.user);
+          success.textContent = 'Account created. Verification email sent — please verify your email before posting.';
+        } else {
+          success.textContent = 'Account created. You may now log in.';
+        }
+        // reset sensitive fields
+        document.getElementById('registerPassword').value = '';
       }catch(x){ console.error(x); err.textContent = x.message || 'Create account failed'; }
     });
 
@@ -222,45 +253,123 @@
 
     logoutBtn.addEventListener('click', ()=>{ signOut(auth); });
 
+    // theme toggle
+    themeToggle.addEventListener('click', ()=>{
+      document.body.classList.toggle('dark');
+    });
+
     // show/hide UI after auth
     onAuthStateChanged(auth, async (user)=>{
       if(user){
+        currentUser = user;
         // fetch role from users collection (best practice)
         let role = 'learner';
         try{
-          const docRef = (await getDocs(query(collection(db,'users')))).docs.find(d=>d.id===user.uid);
-          if(docRef) role = (docRef.data().role||docRef.data().userType||'learner');
+          const userDoc = await getDoc(doc(db,'users',user.uid));
+          if(userDoc.exists()) role = userDoc.data().role || userDoc.data().userType || 'learner';
         }catch(e){ console.warn('Could not read role, defaulting to learner',e); }
 
+        currentRole = role;
         userInfo.innerHTML = `<strong>${escapeHtml(user.email)}</strong><div class='muted'>Role: ${escapeHtml(role)}</div>`;
         logoutBtn.classList.remove('hidden');
         document.getElementById('authWrap').classList.add('hidden');
-        if(role==='teacher') teacherControls.classList.remove('hidden'); else teacherControls.classList.add('hidden');
+
+        // if teacher but email not verified, notify and limit posting until verify
+        if(role === 'teacher' && !user.emailVerified){
+          teacherControls.classList.remove('hidden');
+          document.getElementById('postAnnouncement').disabled = true;
+          document.querySelector('#homeworkForm button[type=submit]').disabled = true;
+          alert('Teacher account detected but email not verified. Please verify your email (check inbox) to enable posting.');
+        } else if(role === 'teacher'){
+          teacherControls.classList.remove('hidden');
+        } else {
+          teacherControls.classList.add('hidden');
+          // prevent learners from seeing tabs or right-click
+          removeAuthTabs();
+          applyLearnerRestrictions();
+        }
 
         // show lists
         startListeners();
+
       } else {
         // signed out
+        currentUser = null; currentRole = null;
         userInfo.textContent = 'Not signed in';
         logoutBtn.classList.add('hidden');
         document.getElementById('authWrap').classList.remove('hidden');
         teacherControls.classList.add('hidden');
+        restoreDefaultRestrictions();
         stopListeners();
-        announcementsList.innerHTML=''; homeworkList.innerHTML='';
+        announcementsList.innerHTML=''; homeworkList.innerHTML=''; submissionsList.innerHTML='';
       }
     });
 
-    // posting announcement
+    // remove tabs for learners (prevent switching)
+    function removeAuthTabs(){
+      tabLogin.classList.add('hidden');
+      tabRegister.classList.add('hidden');
+    }
+    function restoreAuthTabs(){
+      tabLogin.classList.remove('hidden');
+      tabRegister.classList.remove('hidden');
+    }
+
+    // restrict learner actions: right-click, copy/paste, keyboard shortcuts
+    function applyLearnerRestrictions(){
+      // prevent context menu
+      window.addEventListener('contextmenu', contextBlocker, {capture:true});
+      // prevent copy, cut, paste globally
+      window.addEventListener('copy', copyBlocker, {capture:true});
+      window.addEventListener('cut', copyBlocker, {capture:true});
+      window.addEventListener('paste', copyBlocker, {capture:true});
+      // prevent certain keys: Ctrl+U, Ctrl+Shift+I, F12, Ctrl+Shift+C
+      window.addEventListener('keydown', keyBlocker, {capture:true});
+      // add no-select to container except inputs and textareas
+      document.querySelector('.container').classList.add('no-select');
+      // allow selection inside inputs/textarea
+      document.querySelectorAll('input,textarea,select').forEach(el=>el.classList.remove('no-select'));
+    }
+    function restoreDefaultRestrictions(){
+      window.removeEventListener('contextmenu', contextBlocker, {capture:true});
+      window.removeEventListener('copy', copyBlocker, {capture:true});
+      window.removeEventListener('cut', copyBlocker, {capture:true});
+      window.removeEventListener('paste', copyBlocker, {capture:true});
+      window.removeEventListener('keydown', keyBlocker, {capture:true});
+      document.querySelector('.container').classList.remove('no-select');
+      restoreAuthTabs();
+    }
+    function contextBlocker(e){
+      if(currentRole === 'learner'){ e.preventDefault(); }
+    }
+    function copyBlocker(e){
+      if(currentRole === 'learner'){ e.preventDefault(); }
+    }
+    function keyBlocker(e){
+      if(currentRole !== 'learner') return;
+      // block typical inspect / view-source / developer keys
+      if(e.key === 'F12') e.preventDefault();
+      if(e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'C' || e.key === 'J')) e.preventDefault();
+      if(e.ctrlKey && (e.key === 'u' || e.key === 'U')) e.preventDefault();
+      if(e.ctrlKey && e.key === 's') e.preventDefault();
+    }
+
+    // posting announcement (teachers)
     document.getElementById('postAnnouncement').addEventListener('click', async ()=>{
+      if(currentRole !== 'teacher'){ alert('Only teachers can post announcements'); return; }
+      // if teacher email not verified, block
+      if(!currentUser.emailVerified){ alert('Please verify your email before posting.'); return; }
       const text = document.getElementById('announcementText').value.trim();
       if(!text){ alert('Type announcement'); return; }
-      try{ await addDoc(collection(db,'announcements'),{text,author:auth.currentUser?.email||'unknown',date:serverTimestamp(),persistent:true}); document.getElementById('announcementText').value=''; }
+      try{ await addDoc(collection(db,'announcements'),{text,author:currentUser?.email||'unknown',date:serverTimestamp(),persistent:true}); document.getElementById('announcementText').value=''; }
       catch(e){ console.error(e); alert('Failed to post'); }
     });
 
-    // posting homework
+    // posting homework (teachers)
     document.getElementById('homeworkForm').addEventListener('submit', async (e)=>{
       e.preventDefault();
+      if(currentRole !== 'teacher'){ alert('Only teachers can post homework'); return; }
+      if(!currentUser.emailVerified){ alert('Please verify your email before posting.'); return; }
       const title = document.getElementById('hwTitle').value.trim();
       const desc = document.getElementById('hwDescription').value.trim();
       const due = document.getElementById('hwDue').value || null;
@@ -268,21 +377,33 @@
       const msg = document.getElementById('hwMsg'); msg.textContent='';
       if(!title||!desc){ msg.textContent='Please add title and description'; return; }
       try{
-        await addDoc(collection(db,'homeworks'),{title,desc,due,grade,author:auth.currentUser?.email||'unknown',createdAt:serverTimestamp(),persistent:true});
+        const docRef = await addDoc(collection(db,'homeworks'),{title,desc,due,grade,author:currentUser?.email||'unknown',createdAt:serverTimestamp(),persistent:true});
         msg.textContent = 'Saved — persistent.';
         document.getElementById('homeworkForm').reset();
       }catch(e){ console.error(e); msg.textContent = 'Save failed'; }
     });
 
-    // realtime listeners for announcements and homeworks with pagination support
-    let annUnsub=null, hwUnsub=null;
+    // learners submit answers (visible only to teachers) - submissions collection
+    async function submitAnswer(homeworkId, homeworkTitle){
+      if(currentRole !== 'learner'){ alert('Only learners can submit answers'); return; }
+      const answer = document.getElementById('answer_for_' + homeworkId).value.trim();
+      if(!answer){ alert('Type your answer'); return; }
+      try{
+        await addDoc(collection(db,'submissions'),{homeworkId,homeworkTitle,answer,student:currentUser.email,createdAt:serverTimestamp(),marked:false});
+        // clear input
+        document.getElementById('answer_for_' + homeworkId).value = '';
+        alert('Answer submitted — only the teacher can view it.');
+      }catch(e){ console.error(e); alert('Submit failed'); }
+    }
+
+    // realtime listeners for announcements, homeworks and teacher-only submissions
+    let annUnsub=null, hwUnsub=null, subUnsub=null;
     function startListeners(){
-      // announcements: load first PAGE_SIZE and listen for realtime updates (efficient if your app is small)
       const annQ = query(collection(db,'announcements'), orderBy('date','desc'), limit(PAGE_SIZE));
       annUnsub = onSnapshot(annQ, snap=>{
         announcementsList.innerHTML = '';
-        snap.forEach(doc=>{
-          const d = doc.data();
+        snap.forEach(docSnap=>{
+          const d = docSnap.data(); d._id = docSnap.id;
           announcementsList.appendChild(renderAnnouncement(d));
         });
         annCursor = snap.docs.length ? snap.docs[snap.docs.length-1] : null;
@@ -291,19 +412,34 @@
       const hwQ = query(collection(db,'homeworks'), orderBy('createdAt','desc'), limit(PAGE_SIZE));
       hwUnsub = onSnapshot(hwQ, snap=>{
         homeworkList.innerHTML = '';
-        snap.forEach(doc=> homeworkList.appendChild(renderHomework(doc.data())) );
+        snap.forEach(docSnap=>{
+          const d = docSnap.data(); d._id = docSnap.id;
+          homeworkList.appendChild(renderHomework(d));
+        });
         hwCursor = snap.docs.length ? snap.docs[snap.docs.length-1] : null;
       }, err=>{ console.error('HW snapshot',err); homeworkList.innerHTML = '<div class="muted">Failed to load homeworks</div>'; });
+
+      // teacher-only: listen to submissions
+      if(currentRole === 'teacher'){
+        const subQ = query(collection(db,'submissions'), orderBy('createdAt','desc'), limit(100));
+        subUnsub = onSnapshot(subQ, snap=>{
+          submissionsList.innerHTML = '';
+          snap.forEach(docSnap=>{
+            const s = docSnap.data(); s._id = docSnap.id;
+            submissionsList.appendChild(renderSubmission(s, docSnap.id));
+          });
+        }, err=>{ console.error('Sub snapshot',err); submissionsList.innerHTML = '<div class="muted">Failed to load submissions</div>'; });
+      }
     }
-    function stopListeners(){ if(annUnsub) annUnsub(); if(hwUnsub) hwUnsub(); annUnsub=null; hwUnsub=null; }
+    function stopListeners(){ if(annUnsub) annUnsub(); if(hwUnsub) hwUnsub(); if(subUnsub) subUnsub(); annUnsub=null; hwUnsub=null; subUnsub=null; }
 
     // "Load more" actions (one-time fetch to append older items)
     loadMoreAnnouncements.addEventListener('click', async ()=>{
-      if(!annCursor) return; // nothing more
+      if(!annCursor) return;
       try{
         const moreQ = query(collection(db,'announcements'), orderBy('date','desc'), startAfter(annCursor), limit(PAGE_SIZE));
         const snap = await getDocs(moreQ);
-        snap.forEach(doc=> announcementsList.appendChild(renderAnnouncement(doc.data())));
+        snap.forEach(docSnap=>{ const d = docSnap.data(); d._id = docSnap.id; announcementsList.appendChild(renderAnnouncement(d)); });
         annCursor = snap.docs.length ? snap.docs[snap.docs.length-1] : annCursor;
       }catch(e){ console.error(e); }
     });
@@ -312,7 +448,7 @@
       try{
         const moreQ = query(collection(db,'homeworks'), orderBy('createdAt','desc'), startAfter(hwCursor), limit(PAGE_SIZE));
         const snap = await getDocs(moreQ);
-        snap.forEach(doc=> homeworkList.appendChild(renderHomework(doc.data())));
+        snap.forEach(docSnap=>{ const d = docSnap.data(); d._id = docSnap.id; homeworkList.appendChild(renderHomework(d)); });
         hwCursor = snap.docs.length ? snap.docs[snap.docs.length-1] : hwCursor;
       }catch(e){ console.error(e); }
     });
@@ -325,12 +461,33 @@
     }
     function renderHomework(d){
       const el = document.createElement('div'); el.className='list-item';
-      el.innerHTML = `<strong>${escapeHtml(d.title||'')}</strong><div style="margin-top:6px">${escapeHtml(d.desc||'')}</div><div class='meta'>${d.grade?escapeHtml(d.grade)+' • ':''}${d.due? 'Due: '+escapeHtml(d.due) : ''} • ${d.author?escapeHtml(d.author):''}</div>`;
+      let inner = `<strong>${escapeHtml(d.title||'')}</strong><div style="margin-top:6px">${escapeHtml(d.desc||'')}</div><div class='meta'>${d.grade?escapeHtml(d.grade)+' • ':''}${d.due? 'Due: '+escapeHtml(d.due) : ''} • ${d.author?escapeHtml(d.author):''}</div>`;
+      // if learner, show submit form (but restrict copy/paste)
+      if(currentRole === 'learner'){
+        inner += `<div style="margin-top:8px"><textarea id="answer_for_${d._id}" placeholder="Type your answer here (no copy/paste)" onpaste="return false" oncopy="return false" oncut="return false"></textarea><div style="margin-top:6px"><button class=\"primary\" onclick=\"submitAnswer('${d._id}', ${JSON.stringify(d.title)} )\">Submit Answer</button></div></div>`;
+      }
+      el.innerHTML = inner;
+      return el;
+    }
+
+    function renderSubmission(s, docId){
+      const el = document.createElement('div'); el.className='list-item';
+      el.innerHTML = `<div><strong>${escapeHtml(s.homeworkTitle||'')}</strong> — <span class='muted'>${escapeHtml(s.student||'')}</span></div><div style='margin-top:6px'>${escapeHtml(s.answer||'')}</div><div class='meta'>${s.createdAt && s.createdAt.toDate ? escapeHtml(s.createdAt.toDate().toLocaleString()) : ''} • Marked: ${s.marked ? 'Yes' : 'No'}</div>`;
+      // mark/unmark buttons for teacher
+      const btnWrap = document.createElement('div'); btnWrap.style.marginTop = '8px';
+      const markBtn = document.createElement('button'); markBtn.textContent = s.marked ? 'Unmark' : 'Mark as Reviewed'; markBtn.className = 'ghost';
+      markBtn.addEventListener('click', async ()=>{
+        try{ await updateDoc(doc(db,'submissions',docId), { marked: !s.marked, markedBy: currentUser.email, markedAt: serverTimestamp() }); }
+        catch(e){ console.error(e); alert('Failed to update'); }
+      });
+      btnWrap.appendChild(markBtn);
+      el.appendChild(btnWrap);
       return el;
     }
 
     // minimal html escape
     function escapeHtml(s){ return String(s||'').replace(/[&<>\"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;" })[m]); }
+
   </script>
 </body>
 </html>
