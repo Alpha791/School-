@@ -44,24 +44,21 @@
   <script type="module">
     // Import Firebase SDKs
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-analytics.js";
     import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
-    // Firebase config
+    // ✅ Firebase config (your project)
     const firebaseConfig = {
       apiKey: "AIzaSyD_YydnZKjW8IdApXZKMqDHk6ZiF7Ioh-g",
       authDomain: "school-homework-f3191.firebaseapp.com",
       projectId: "school-homework-f3191",
       storageBucket: "school-homework-f3191.appspot.com",
       messagingSenderId: "104455696211",
-      appId: "1:104455696211:web:f12c1823675c45064b3ba6",
-      measurementId: "G-D88DE8LG6G"
+      appId: "1:104455696211:web:f12c1823675c45064b3ba6"
     };
 
-    // Init Firebase
+    // ✅ Init Firebase
     const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
@@ -72,7 +69,7 @@
     const teacherMessages = document.getElementById("teacherMessages");
     const learnerMessages = document.getElementById("learnerMessages");
 
-    // Login
+    // ✅ Login
     document.getElementById("loginForm").addEventListener("submit", (e) => {
       e.preventDefault();
       const email = document.getElementById("email").value;
@@ -81,7 +78,7 @@
       signInWithEmailAndPassword(auth, email, password)
         .then(() => {
           loginSection.classList.add("hidden");
-          if (email.includes("teacher")) {
+          if (email.toLowerCase().includes("teacher")) {
             teacherSection.classList.remove("hidden");
             loadMessages("teacher");
           } else {
@@ -92,7 +89,7 @@
         .catch((error) => alert("Login failed: " + error.message));
     });
 
-    // Logout
+    // ✅ Logout
     window.logout = () => {
       signOut(auth).then(() => {
         teacherSection.classList.add("hidden");
@@ -101,16 +98,19 @@
       });
     };
 
-    // Teacher post
+    // ✅ Teacher post
     document.getElementById("postBtn").addEventListener("click", async () => {
-      const text = document.getElementById("announcement").value;
-      if (text.trim() === "") return;
-      await addDoc(collection(db, "announcements"), { text, date: new Date() });
+      const text = document.getElementById("announcement").value.trim();
+      if (!text) return;
+      await addDoc(collection(db, "announcements"), { 
+        text, 
+        date: serverTimestamp()   // 🔥 safer: lets Firestore assign timestamp
+      });
       document.getElementById("announcement").value = "";
       loadMessages("teacher");
     });
 
-    // Load announcements
+    // ✅ Load announcements
     async function loadMessages(role) {
       const querySnapshot = await getDocs(collection(db, "announcements"));
       const container = role === "teacher" ? teacherMessages : learnerMessages;
@@ -118,8 +118,8 @@
       querySnapshot.forEach((doc) => {
         const data = doc.data();
         const div = document.createElement("div");
-        let dateString = data.date?.seconds 
-          ? new Date(data.date.seconds * 1000).toLocaleString()
+        let dateString = data.date?.toDate 
+          ? data.date.toDate().toLocaleString() 
           : new Date().toLocaleString();
         div.textContent = data.text + " (" + dateString + ")";
         container.appendChild(div);
