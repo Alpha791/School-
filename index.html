@@ -9,10 +9,19 @@
     input, textarea, button { display: block; margin: 10px 0; padding: 8px; width: 100%; max-width: 300px; }
     #messages div { background: #eee; margin: 5px 0; padding: 10px; border-radius: 5px; }
     .hidden { display: none; }
+    .error { color: red; margin: 10px 0; }
+    .debug { background: #fffacd; padding: 10px; margin: 10px 0; border-radius: 5px; }
   </style>
 </head>
 <body>
   <h1 id="appTitle">Welcome to School App</h1>
+
+  <!-- Debug Info -->
+  <div id="debugInfo" class="debug">
+    <strong>Debug Info:</strong>
+    <div id="currentDomain"></div>
+    <div id="firebaseStatus">Checking Firebase...</div>
+  </div>
 
   <!-- Login Form -->
   <div id="loginSection">
@@ -21,13 +30,21 @@
       <input type="password" id="password" placeholder="Password" required>
       <button type="submit">Login</button>
     </form>
+    <div id="loginError" class="error"></div>
+    
+    <!-- Test Credentials Hint -->
+    <div style="margin-top: 20px; padding: 10px; background: #e7f3ff; border-radius: 5px;">
+      <strong>Test Accounts:</strong><br>
+      Teacher: teacher@school.com (any password)<br>
+      Student: student@school.com (any password)
+    </div>
   </div>
 
   <!-- Teacher Dashboard -->
   <div id="teacherSection" class="hidden">
     <h2>Teacher Dashboard</h2>
     <textarea id="announcement" placeholder="Write announcement..."></textarea>
-    <button id="postBtn">Post</button>
+    <button id="postBtn">Post Announcement</button>
     <h3>Announcements</h3>
     <div id="teacherMessages"></div>
     <button onclick="logout()">Logout</button>
@@ -42,12 +59,28 @@
 
   <!-- Firebase + App Logic -->
   <script type="module">
+    // Show current domain for debugging
+    document.getElementById('currentDomain').textContent = 'Current URL: ' + window.location.href;
+
     // Import Firebase SDKs
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, getDocs, serverTimestamp, orderBy, query } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+    import { 
+      getAuth, 
+      signInWithEmailAndPassword, 
+      signOut,
+      onAuthStateChanged 
+    } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+    import { 
+      getFirestore, 
+      collection, 
+      addDoc, 
+      getDocs, 
+      serverTimestamp, 
+      orderBy, 
+      query 
+    } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
-    // ✅ Firebase config (your project)
+    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyD_YydnZKjW8IdApXZKMqDHk6ZiF7Ioh-g",
       authDomain: "school-homework-f3191.firebaseapp.com",
@@ -57,91 +90,155 @@
       appId: "1:104455696211:web:f12c1823675c45064b3ba6"
     };
 
-    // ✅ Init Firebase
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+    try {
+      // Initialize Firebase
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+      
+      document.getElementById('firebaseStatus').textContent = 'Firebase initialized successfully';
+      document.getElementById('firebaseStatus').style.color = 'green';
 
-    // DOM references
-    const loginSection = document.getElementById("loginSection");
-    const teacherSection = document.getElementById("teacherSection");
-    const learnerSection = document.getElementById("learnerSection");
-    const teacherMessages = document.getElementById("teacherMessages");
-    const learnerMessages = document.getElementById("learnerMessages");
+      // DOM references
+      const loginSection = document.getElementById("loginSection");
+      const teacherSection = document.getElementById("teacherSection");
+      const learnerSection = document.getElementById("learnerSection");
+      const teacherMessages = document.getElementById("teacherMessages");
+      const learnerMessages = document.getElementById("learnerMessages");
+      const loginError = document.getElementById("loginError");
 
-    // ✅ Login
-    document.getElementById("loginForm").addEventListener("submit", (e) => {
-      e.preventDefault();
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-
-      signInWithEmailAndPassword(auth, email, password)
-        .then(() => {
+      // Check auth state
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          console.log("User is signed in:", user.email);
           loginSection.classList.add("hidden");
-          if (email.toLowerCase().includes("teacher")) {
+          if (user.email.toLowerCase().includes("teacher")) {
             teacherSection.classList.remove("hidden");
             loadMessages("teacher");
           } else {
             learnerSection.classList.remove("hidden");
             loadMessages("learner");
           }
-        })
-        .catch((error) => alert("Login failed: " + error.message));
-    });
-
-    // ✅ Logout
-    window.logout = () => {
-      signOut(auth).then(() => {
-        teacherSection.classList.add("hidden");
-        learnerSection.classList.add("hidden");
-        loginSection.classList.remove("hidden");
+        } else {
+          console.log("User is signed out");
+          teacherSection.classList.add("hidden");
+          learnerSection.classList.add("hidden");
+          loginSection.classList.remove("hidden");
+        }
       });
-    };
 
-    // ✅ Teacher post
-    document.getElementById("postBtn").addEventListener("click", async () => {
-      const text = document.getElementById("announcement").value.trim();
-      if (!text) return;
-      try {
-        await addDoc(collection(db, "announcements"), { 
-          text, 
-          date: serverTimestamp()
-        });
-        document.getElementById("announcement").value = "";
-        loadMessages("teacher");
-      } catch (error) {
-        console.error("Error posting announcement:", error);
-      }
-    });
-
-    // ✅ Load announcements
-    async function loadMessages(role) {
-      try {
-        const q = query(collection(db, "announcements"), orderBy("date", "desc"));
-        const querySnapshot = await getDocs(q);
-        const container = role === "teacher" ? teacherMessages : learnerMessages;
-        container.innerHTML = "";
+      // Login handler
+      document.getElementById("loginForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
         
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          const div = document.createElement("div");
+        loginError.textContent = "";
+        
+        try {
+          console.log("Attempting login with:", email);
+          const userCredential = await signInWithEmailAndPassword(auth, email, password);
+          console.log("Login successful:", userCredential.user.email);
+        } catch (error) {
+          console.error("Login error:", error);
+          let errorMessage = "Login failed: ";
           
-          // Handle timestamp safely
-          let dateString = "Just now";
-          if (data.date) {
-            try {
-              dateString = data.date.toDate().toLocaleString();
-            } catch (e) {
-              dateString = new Date().toLocaleString();
-            }
+          switch (error.code) {
+            case 'auth/invalid-email':
+              errorMessage += 'Invalid email address';
+              break;
+            case 'auth/user-disabled':
+              errorMessage += 'This account has been disabled';
+              break;
+            case 'auth/user-not-found':
+              errorMessage += 'No account found with this email';
+              break;
+            case 'auth/wrong-password':
+              errorMessage += 'Incorrect password';
+              break;
+            case 'auth/network-request-failed':
+              errorMessage += 'Network error. Please check your connection';
+              break;
+            case 'auth/unauthorized-domain':
+              errorMessage += 'This domain is not authorized. Please use localhost:8000';
+              break;
+            default:
+              errorMessage += error.message;
           }
           
-          div.textContent = data.text + " (" + dateString + ")";
-          container.appendChild(div);
+          loginError.textContent = errorMessage;
+        }
+      });
+
+      // Logout
+      window.logout = () => {
+        signOut(auth).then(() => {
+          console.log("User signed out");
+        }).catch((error) => {
+          console.error("Logout error:", error);
         });
-      } catch (error) {
-        console.error("Error loading messages:", error);
+      };
+
+      // Teacher post announcement
+      document.getElementById("postBtn").addEventListener("click", async () => {
+        const text = document.getElementById("announcement").value.trim();
+        if (!text) return;
+        
+        try {
+          await addDoc(collection(db, "announcements"), { 
+            text, 
+            date: serverTimestamp(),
+            author: auth.currentUser.email
+          });
+          document.getElementById("announcement").value = "";
+          loadMessages("teacher");
+        } catch (error) {
+          console.error("Error posting announcement:", error);
+          alert("Error posting announcement: " + error.message);
+        }
+      });
+
+      // Load announcements
+      async function loadMessages(role) {
+        try {
+          const q = query(collection(db, "announcements"), orderBy("date", "desc"));
+          const querySnapshot = await getDocs(q);
+          const container = role === "teacher" ? teacherMessages : learnerMessages;
+          container.innerHTML = "";
+          
+          if (querySnapshot.empty) {
+            container.innerHTML = "<div>No announcements yet.</div>";
+            return;
+          }
+          
+          querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            const div = document.createElement("div");
+            
+            let dateString = "Recently";
+            if (data.date) {
+              try {
+                dateString = data.date.toDate().toLocaleString();
+              } catch (e) {
+                // If timestamp is pending, use current time
+                dateString = new Date().toLocaleString() + " (pending)";
+              }
+            }
+            
+            div.innerHTML = `<strong>${data.text}</strong><br><small>${dateString}</small>`;
+            container.appendChild(div);
+          });
+        } catch (error) {
+          console.error("Error loading messages:", error);
+          const container = role === "teacher" ? teacherMessages : learnerMessages;
+          container.innerHTML = "<div>Error loading announcements.</div>";
+        }
       }
+
+    } catch (error) {
+      console.error("Firebase initialization error:", error);
+      document.getElementById('firebaseStatus').textContent = 'Firebase init failed: ' + error.message;
+      document.getElementById('firebaseStatus').style.color = 'red';
     }
   </script>
 </body>
