@@ -1,242 +1,156 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>School Project</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>School Project — Teacher Homework & Announcements</title>
   <style>
-    /* Page layout */
-    :root {
-      --max-width: 900px;
-      --card-bg: #ffffff;
-      --muted: #6b7280;
-      --accent: #007bff;
+    :root{
+      --max-width:1100px; --accent:#0066ff; --muted:#6b7280; --card:#fff; --bg:#f3f4f6;
     }
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      background: #f3f4f6;
-      color: #111827;
-      display: flex;
-      justify-content: center;
-    }
-    .container {
-      width: 100%;
-      max-width: var(--max-width);
-      background: var(--card-bg);
-      padding: 18px;
-      border-radius: 10px;
-      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
-    }
+    *{box-sizing:border-box}
+    body{font-family:Inter, Roboto, system-ui, Arial, sans-serif;margin:12px;background:var(--bg);color:#0f172a;display:flex;justify-content:center}
+    .container{width:100%;max-width:var(--max-width);background:var(--card);padding:18px;border-radius:12px;box-shadow:0 8px 30px rgba(2,6,23,0.06)}
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    h1{font-size:1.25rem;margin:0}
 
-    h1 { margin-top: 0; font-size: 1.6rem; }
+    /* responsive columns */
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px;margin-top:14px}
+    @media (max-width:920px){.grid{grid-template-columns:1fr}}
 
-    /* Forms & controls */
-    form { margin: 0; }
-    .form-row { margin: 10px 0; }
-    input[type="email"], input[type="password"], select, textarea, button {
-      box-sizing: border-box;
-      width: 100%;
-      font-size: 0.95rem;
-      padding: 10px 12px;
-      border: 1px solid #d1d5db;
-      border-radius: 6px;
-      background: white;
-    }
-    textarea { min-height: 100px; resize: vertical; }
+    /* forms */
+    form{margin:0}
+    .card{background:#fff;padding:12px;border-radius:10px;border:1px solid #eef2ff}
+    .form-row{margin:8px 0}
+    input,select,textarea,button{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e7eb;font-size:0.95rem}
+    textarea{min-height:100px;resize:vertical}
+    .row{display:flex;gap:8px}
+    .row .col{flex:1}
 
-    /* Buttons */
-    button {
-      cursor: pointer;
-    }
-    button[type="submit"] {
-      background: var(--accent);
-      color: white;
-      border: none;
-      padding: 10px 14px;
-      border-radius: 6px;
-    }
-    .secondary-btn {
-      background: transparent;
-      border: 1px solid #d1d5db;
-      color: #111827;
-    }
+    button.primary{background:var(--accent);color:#fff;border:none}
+    button.ghost{background:transparent;border:1px solid #e6e7eb}
 
-    /* Tab buttons */
-    .tab-buttons { display: flex; gap: 6px; margin-bottom: 12px; }
-    .tab-button {
-      flex: 1;
-      padding: 10px;
-      border-radius: 6px;
-      border: 1px solid #d1d5db;
-      background: #f8fafc;
-      text-align: center;
-      font-weight: 600;
-    }
-    .tab-button.active {
-      background: var(--accent);
-      color: #fff;
-      border-color: var(--accent);
-    }
+    /* tabs */
+    .tabs{display:flex;gap:8px}
+    .tab{flex:1;padding:8px;border-radius:8px;text-align:center;background:#f8fafc;border:1px solid #e6eefc;cursor:pointer;font-weight:600}
+    .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 
-    /* Message containers */
-    #teacherMessages div, #learnerMessages div {
-      background: #eef2ff;
-      margin: 8px 0;
-      padding: 10px;
-      border-radius: 8px;
-      word-wrap: break-word;
-    }
+    /* lists */
+    .list-item{padding:10px;border-radius:8px;border:1px solid #eef2ff;background:linear-gradient(180deg,#fff,#fbfdff);margin-bottom:10px}
+    .meta{font-size:0.85rem;color:var(--muted);margin-top:6px}
 
-    .debug {
-      background: #fffbe6;
-      padding: 10px;
-      margin: 10px 0;
-      border-radius: 6px;
-      border: 1px solid #f5e4a1;
-      font-size: 0.9rem;
-    }
-    .error { color: #dc2626; margin: 8px 0; }
-    .success { color: #16a34a; margin: 8px 0; }
+    /* tiny helpers */
+    .muted{color:var(--muted)}
+    .hidden{display:none}
 
-    /* Sections */
-    .hidden { display: none; }
-    .quick-test { margin-top: 14px; padding: 12px; background: #e7f3ff; border-radius: 8px; }
-    .quick-test button { width: auto; display: inline-block; margin-right: 8px; }
-
-    /* Footer / small screens */
-    @media (max-width: 480px) {
-      .tab-buttons { flex-direction: column; }
-    }
+    /* performance: keep layout simple, remove heavy shadows on small screens */
+    @media (max-width:480px){.container{padding:12px;border-radius:8px}}
   </style>
 </head>
 <body>
   <div class="container">
-    <h1 id="appTitle">Welcome to School App</h1>
+    <header>
+      <h1>School App — Homework & Announcements</h1>
+      <div id="debug" style="font-size:0.85rem;color:var(--muted)"></div>
+    </header>
 
-    <!-- Debug Info -->
-    <div id="debugInfo" class="debug" aria-live="polite">
-      <strong>Debug Info:</strong>
-      <div id="currentDomain"></div>
-      <div id="firebaseStatus">Checking Firebase...</div>
-    </div>
-
-    <!-- Login/Register Section -->
-    <div id="authSection">
-      <div class="tab-buttons" role="tablist" aria-label="Auth tabs">
-        <!-- pass the button element to showTab so it can safely toggle active state -->
-        <button class="tab-button active" role="tab" aria-selected="true" onclick="showTab('login', this)">Login</button>
-        <button class="tab-button" role="tab" aria-selected="false" onclick="showTab('register', this)">Register</button>
+    <!-- Auth area -->
+    <section id="authWrap" class="card" aria-live="polite">
+      <div class="tabs" role="tablist">
+        <button class="tab active" id="tabLogin" onclick="showTab('login', this)">Login</button>
+        <button class="tab" id="tabRegister" onclick="showTab('register', this)">Register</button>
       </div>
 
-      <!-- Login Form -->
-      <div id="loginTab" role="tabpanel">
-        <form id="loginForm" aria-label="Login form">
-          <div class="form-row">
-            <label class="hidden" for="loginEmail">Email</label>
-            <input aria-label="Email" type="email" id="loginEmail" placeholder="Email" required />
-          </div>
-          <div class="form-row">
-            <label class="hidden" for="loginPassword">Password</label>
-            <input aria-label="Password" type="password" id="loginPassword" placeholder="Password" required />
-          </div>
-          <div class="form-row">
-            <button type="submit">Login</button>
-          </div>
+      <div id="loginPanel">
+        <form id="loginForm">
+          <div class="form-row"><input id="loginEmail" type="email" placeholder="Email" required /></div>
+          <div class="form-row"><input id="loginPassword" type="password" placeholder="Password" required /></div>
+          <div class="form-row row"><button class="primary" type="submit">Login</button><button type="button" class="ghost" onclick="fillTestCredentials('teacher')">Test Teacher</button></div>
+          <div id="loginError" class="muted" style="color:#b91c1c;margin-top:6px"></div>
         </form>
-        <div id="loginError" class="error" role="status" aria-live="polite"></div>
       </div>
 
-      <!-- Register Form -->
-      <div id="registerTab" class="hidden" role="tabpanel" aria-hidden="true">
-        <form id="registerForm" aria-label="Register form">
+      <div id="registerPanel" class="hidden">
+        <form id="registerForm">
+          <div class="form-row"><input id="registerEmail" type="email" placeholder="Email" required /></div>
+          <div class="form-row"><input id="registerPassword" type="password" placeholder="Password (min 6)" required /></div>
           <div class="form-row">
-            <label class="hidden" for="registerEmail">Email</label>
-            <input aria-label="Register Email" type="email" id="registerEmail" placeholder="Email" required />
-          </div>
-          <div class="form-row">
-            <label class="hidden" for="registerPassword">Password</label>
-            <input aria-label="Register Password" type="password" id="registerPassword" placeholder="Password (min 6 characters)" required />
-          </div>
-          <div class="form-row">
-            <label class="hidden" for="userType">User Type</label>
-            <select id="userType" aria-label="User Type" required>
-              <option value="">Select user type</option>
+            <select id="registerType" required>
+              <option value="">Select role</option>
               <option value="teacher">Teacher</option>
               <option value="learner">Learner</option>
             </select>
           </div>
-          <div class="form-row">
-            <button type="submit">Create Account</button>
-          </div>
+          <div class="form-row"><button class="primary" type="submit">Create account</button></div>
+          <div id="registerError" class="muted" style="color:#b91c1c;margin-top:6px"></div>
         </form>
-        <div id="registerError" class="error" role="status" aria-live="polite"></div>
-        <div id="registerSuccess" class="success" role="status" aria-live="polite"></div>
       </div>
+    </section>
 
-      <!-- Quick Test Buttons -->
-      <div class="quick-test" aria-hidden="false">
-        <strong>Quick Test:</strong><br>
-        <!-- make these type="button" so they don't submit any form -->
-        <button type="button" onclick="fillTestCredentials('teacher')" class="secondary-btn">Fill Teacher Credentials</button>
-        <button type="button" onclick="fillTestCredentials('learner')" class="secondary-btn">Fill Learner Credentials</button>
-      </div>
-    </div>
+    <div class="grid">
+      <!-- main column: announcements + homeworks -->
+      <main>
+        <!-- teacher controls (shown after login if teacher) -->
+        <section id="teacherControls" class="card hidden">
+          <h3>Post Announcement</h3>
+          <div class="form-row"><textarea id="announcementText" placeholder="Announcement text"></textarea></div>
+          <div class="form-row"><button id="postAnnouncement" class="primary">Post Announcement</button></div>
 
-    <!-- Teacher Dashboard -->
-    <div id="teacherSection" class="hidden" aria-hidden="true">
-      <h2>Teacher Dashboard</h2>
-      <div class="form-row">
-        <label class="hidden" for="announcement">Announcement</label>
-        <textarea id="announcement" placeholder="Write announcement..." aria-label="Write announcement"></textarea>
-      </div>
-      <div class="form-row">
-        <button id="postBtn" type="button">Post Announcement</button>
-      </div>
-      <h3>Announcements</h3>
-      <div id="teacherMessages" aria-live="polite"></div>
-      <div class="form-row">
-        <button type="button" onclick="logout()" class="secondary-btn">Logout</button>
-      </div>
-    </div>
+          <hr style="margin:12px 0" />
 
-    <!-- Learner Dashboard -->
-    <div id="learnerSection" class="hidden" aria-hidden="true">
-      <h2>Learner Dashboard</h2>
-      <div id="learnerMessages" aria-live="polite"></div>
-      <div class="form-row">
-        <button type="button" onclick="logout()" class="secondary-btn">Logout</button>
-      </div>
+          <h3>Post Homework (Teachers only — persistent)</h3>
+          <form id="homeworkForm">
+            <div class="form-row"><input id="hwTitle" placeholder="Homework title (e.g. Maths: Fractions)" required /></div>
+            <div class="form-row"><textarea id="hwDescription" placeholder="Homework details, instructions, resources, etc" required></textarea></div>
+            <div class="row">
+              <div class="col"><input id="hwDue" type="date" /></div>
+              <div class="col"><select id="hwGrade"><option value="">All grades</option><option>Grade 1</option><option>Grade 2</option><option>Grade 3</option><option>Grade 4</option><option>Grade 5</option><option>Grade 6</option><option>Grade 7</option><option>Grade 8</option><option>Grade 9</option></select></div>
+            </div>
+            <div style="margin-top:8px"><button class="primary" type="submit">Save Homework (persistent)</button></div>
+            <div id="hwMsg" class="muted" style="margin-top:8px"></div>
+          </form>
+        </section>
+
+        <!-- Announcements list -->
+        <section class="card" style="margin-top:12px">
+          <h3>Announcements</h3>
+          <div id="announcementsList"></div>
+          <div style="text-align:center;margin-top:8px"><button id="loadMoreAnnouncements" class="ghost">Load more</button></div>
+        </section>
+
+        <!-- Homework list -->
+        <section class="card" style="margin-top:12px">
+          <h3>Homeworks</h3>
+          <div id="homeworkList"></div>
+          <div style="text-align:center;margin-top:8px"><button id="loadMoreHomeworks" class="ghost">Load more</button></div>
+        </section>
+      </main>
+
+      <!-- side column: profile / quick actions -->
+      <aside>
+        <section class="card" id="profileCard" style="text-align:center">
+          <div id="userInfo">Not signed in</div>
+          <div style="margin-top:8px"><button id="logoutBtn" class="ghost hidden">Logout</button></div>
+        </section>
+
+        <section class="card" style="margin-top:12px">
+          <strong>Performance & persistence</strong>
+          <p class="muted" style="font-size:0.9rem">Homeworks are saved with <code>persistent: true</code> flag in Firestore. The app does not delete them automatically — ensure your Firestore rules or scheduled functions are not configured to remove documents.</p>
+        </section>
+      </aside>
     </div>
   </div>
 
-  <!-- Firebase + App Logic -->
   <script type="module">
-    // Show current URL for debugging
-    document.getElementById('currentDomain').textContent = 'Current URL: ' + window.location.href;
+    // show simple debug
+    document.getElementById('debug').textContent = 'Client ready';
 
-    // Import Firebase SDKs
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-    import {
-      getAuth,
-      signInWithEmailAndPassword,
-      createUserWithEmailAndPassword,
-      signOut,
-      onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
-    import {
-      getFirestore,
-      collection,
-      addDoc,
-      getDocs,
-      serverTimestamp,
-      orderBy,
-      query,
-      doc,
-      setDoc
-    } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+    // firebase modular imports
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js';
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js';
+    import { getFirestore, collection, addDoc, setDoc, doc, serverTimestamp, query, orderBy, limit, onSnapshot, getDocs, startAfter } from 'https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js';
 
-    // Firebase config (kept as provided)
+    // config (kept as provided)
     const firebaseConfig = {
       apiKey: "AIzaSyD_YydnZKjW8IdApXZKMqDHk6ZiF7Ioh-g",
       authDomain: "school-homework-f3191.firebaseapp.com",
@@ -246,322 +160,177 @@
       appId: "1:104455696211:web:f12c1823675c45064b3ba6"
     };
 
-    try {
-      // Initialize Firebase
-      const app = initializeApp(firebaseConfig);
-      const auth = getAuth(app);
-      const db = getFirestore(app);
+    // init
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-      document.getElementById('firebaseStatus').textContent = 'Firebase initialized successfully';
-      document.getElementById('firebaseStatus').style.color = 'green';
+    // UI refs
+    const loginPanel = document.getElementById('loginPanel');
+    const registerPanel = document.getElementById('registerPanel');
+    const tabLogin = document.getElementById('tabLogin');
+    const tabRegister = document.getElementById('tabRegister');
+    const teacherControls = document.getElementById('teacherControls');
+    const userInfo = document.getElementById('userInfo');
+    const logoutBtn = document.getElementById('logoutBtn');
 
-      // DOM references
-      const authSection = document.getElementById("authSection");
-      const teacherSection = document.getElementById("teacherSection");
-      const learnerSection = document.getElementById("learnerSection");
-      const teacherMessages = document.getElementById("teacherMessages");
-      const learnerMessages = document.getElementById("learnerMessages");
-      const loginError = document.getElementById("loginError");
-      const registerError = document.getElementById("registerError");
-      const registerSuccess = document.getElementById("registerSuccess");
+    // lists + pagination cursors
+    const announcementsList = document.getElementById('announcementsList');
+    const homeworkList = document.getElementById('homeworkList');
+    const loadMoreAnnouncements = document.getElementById('loadMoreAnnouncements');
+    const loadMoreHomeworks = document.getElementById('loadMoreHomeworks');
+    let annCursor = null, hwCursor = null;
+    const PAGE_SIZE = 10; // load in pages for performance
 
-      // Tab switching function - accepts the clicked button to safely toggle active class
-      window.showTab = (tabName, btn) => {
-        // Update tab buttons
-        document.querySelectorAll('.tab-button').forEach(b => {
-          b.classList.remove('active');
-          b.setAttribute('aria-selected', 'false');
-        });
-        if (btn && btn.classList) {
-          btn.classList.add('active');
-          btn.setAttribute('aria-selected', 'true');
-        }
+    // helper: toggle tabs
+    window.showTab = (name, btn)=>{
+      tabLogin.classList.remove('active'); tabRegister.classList.remove('active');
+      if(btn) btn.classList.add('active');
+      if(name==='login'){ loginPanel.classList.remove('hidden'); registerPanel.classList.add('hidden'); }
+      else { registerPanel.classList.remove('hidden'); loginPanel.classList.add('hidden'); }
+    };
 
-        // Show/hide tabs
-        const loginTab = document.getElementById('loginTab');
-        const registerTab = document.getElementById('registerTab');
+    // quick fill
+    window.fillTestCredentials = (role)=>{
+      document.getElementById('registerEmail').value = role==='teacher' ? 'teacher@school.com' : 'student@school.com';
+      document.getElementById('registerPassword').value = '123456';
+      document.getElementById('registerType').value = role==='teacher' ? 'teacher' : 'learner';
+    };
 
-        if (tabName === 'login') {
-          loginTab.classList.remove('hidden');
-          loginTab.setAttribute('aria-hidden', 'false');
-          registerTab.classList.add('hidden');
-          registerTab.setAttribute('aria-hidden', 'true');
-        } else {
-          registerTab.classList.remove('hidden');
-          registerTab.setAttribute('aria-hidden', 'false');
-          loginTab.classList.add('hidden');
-          loginTab.setAttribute('aria-hidden', 'true');
-        }
+    // auth handlers
+    document.getElementById('registerForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const email = document.getElementById('registerEmail').value.trim();
+      const pass = document.getElementById('registerPassword').value;
+      const role = document.getElementById('registerType').value;
+      const err = document.getElementById('registerError'); err.textContent='';
+      if(!email||!pass||pass.length<6||!role){ err.textContent='Fill all fields correctly'; return; }
+      try{
+        const cred = await createUserWithEmailAndPassword(auth,email,pass);
+        // save profile with role
+        await setDoc(doc(db,'users',cred.user.uid),{email,role,createdAt:serverTimestamp()});
+      }catch(x){ console.error(x); err.textContent = x.message || 'Create account failed'; }
+    });
 
-        // Clear messages
-        loginError.textContent = '';
-        registerError.textContent = '';
-        registerSuccess.textContent = '';
-      };
+    document.getElementById('loginForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value.trim();
+      const pass = document.getElementById('loginPassword').value;
+      const err = document.getElementById('loginError'); err.textContent='';
+      try{ await signInWithEmailAndPassword(auth,email,pass); }catch(x){ console.error(x); err.textContent = x.message || 'Login failed'; }
+    });
 
-      // Quick test credential filler
-      window.fillTestCredentials = (type) => {
-        if (type === 'teacher') {
-          document.getElementById('registerEmail').value = 'teacher@school.com';
-          document.getElementById('registerPassword').value = '123456';
-          document.getElementById('userType').value = 'teacher';
-        } else {
-          document.getElementById('registerEmail').value = 'student@school.com';
-          document.getElementById('registerPassword').value = '123456';
-          document.getElementById('userType').value = 'learner';
-        }
-      };
+    logoutBtn.addEventListener('click', ()=>{ signOut(auth); });
 
-      // Check auth state
-      onAuthStateChanged(auth, (user) => {
-        if (user) {
-          console.log("User is signed in:", user.email);
-          authSection.classList.add("hidden");
+    // show/hide UI after auth
+    onAuthStateChanged(auth, async (user)=>{
+      if(user){
+        // fetch role from users collection (best practice)
+        let role = 'learner';
+        try{
+          const docRef = (await getDocs(query(collection(db,'users')))).docs.find(d=>d.id===user.uid);
+          if(docRef) role = (docRef.data().role||docRef.data().userType||'learner');
+        }catch(e){ console.warn('Could not read role, defaulting to learner',e); }
 
-          const userEmail = (user.email || "").toLowerCase();
-          if (userEmail.includes('teacher') || userEmail === 'teacher@school.com') {
-            teacherSection.classList.remove("hidden");
-            teacherSection.setAttribute('aria-hidden', 'false');
-            learnerSection.classList.add("hidden");
-            learnerSection.setAttribute('aria-hidden', 'true');
-            loadMessages("teacher");
-          } else {
-            learnerSection.classList.remove("hidden");
-            learnerSection.setAttribute('aria-hidden', 'false');
-            teacherSection.classList.add("hidden");
-            teacherSection.setAttribute('aria-hidden', 'true');
-            loadMessages("learner");
-          }
-        } else {
-          console.log("User is signed out");
-          teacherSection.classList.add("hidden");
-          learnerSection.classList.add("hidden");
-          authSection.classList.remove("hidden");
-        }
-      });
+        userInfo.innerHTML = `<strong>${escapeHtml(user.email)}</strong><div class='muted'>Role: ${escapeHtml(role)}</div>`;
+        logoutBtn.classList.remove('hidden');
+        document.getElementById('authWrap').classList.add('hidden');
+        if(role==='teacher') teacherControls.classList.remove('hidden'); else teacherControls.classList.add('hidden');
 
-      // Login handler
-      document.getElementById("loginForm").addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const email = document.getElementById("loginEmail").value.trim();
-        const password = document.getElementById("loginPassword").value;
-        
-        loginError.textContent = "";
-
-        if (!email || !password) {
-          loginError.textContent = "Please enter both email and password.";
-          return;
-        }
-
-        try {
-          console.log("Attempting login with:", email);
-          const userCredential = await signInWithEmailAndPassword(auth, email, password);
-          console.log("Login successful:", userCredential.user.email);
-        } catch (error) {
-          console.error("Login error:", error);
-          let errorMessage = "Login failed: ";
-
-          switch (error.code) {
-            case 'auth/invalid-email':
-              errorMessage += 'Invalid email address';
-              break;
-            case 'auth/user-disabled':
-              errorMessage += 'This account has been disabled';
-              break;
-            case 'auth/user-not-found':
-              errorMessage += 'No account found with this email. Please register first.';
-              break;
-            case 'auth/wrong-password':
-              errorMessage += 'Incorrect password';
-              break;
-            case 'auth/network-request-failed':
-              errorMessage += 'Network error. Please check your connection';
-              break;
-            case 'auth/unauthorized-domain':
-              errorMessage += 'This domain is not authorized. Please check Firebase Console settings.';
-              break;
-            default:
-              errorMessage += error.message || 'Unknown error';
-          }
-
-          loginError.textContent = errorMessage;
-        }
-      });
-
-      // Register handler
-      document.getElementById("registerForm").addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const email = document.getElementById("registerEmail").value.trim();
-        const password = document.getElementById("registerPassword").value;
-        const userType = document.getElementById("userType").value;
-
-        registerError.textContent = "";
-        registerSuccess.textContent = "";
-
-        if (!email || !password) {
-          registerError.textContent = "Please provide email and password.";
-          return;
-        }
-
-        if (password.length < 6) {
-          registerError.textContent = "Password must be at least 6 characters long";
-          return;
-        }
-
-        if (!userType) {
-          registerError.textContent = "Please select user type";
-          return;
-        }
-
-        try {
-          console.log("Attempting to create account:", email);
-          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-          console.log("Registration successful:", userCredential.user.email);
-
-          // Store additional user data in Firestore (non-blocking)
-          try {
-            await setDoc(doc(db, "users", userCredential.user.uid), {
-              email: email,
-              userType: userType,
-              createdAt: serverTimestamp()
-            });
-          } catch (firestoreError) {
-            console.error("Error saving user data:", firestoreError);
-            // continue - auth succeeded
-          }
-
-          registerSuccess.textContent = `Account created successfully! You are now logged in as ${userType}.`;
-
-          // Auto-switch to login tab after successful registration
-          setTimeout(() => {
-            // find login tab button and simulate clicking
-            const loginBtn = Array.from(document.querySelectorAll('.tab-button')).find(b => b.textContent.trim().toLowerCase() === 'login');
-            showTab('login', loginBtn);
-            document.getElementById('loginEmail').value = email;
-            document.getElementById('loginPassword').value = '';
-          }, 1200);
-
-        } catch (error) {
-          console.error("Registration error:", error);
-          let errorMessage = "Registration failed: ";
-
-          switch (error.code) {
-            case 'auth/email-already-in-use':
-              errorMessage += 'This email is already registered. Please login instead.';
-              break;
-            case 'auth/invalid-email':
-              errorMessage += 'Invalid email address';
-              break;
-            case 'auth/weak-password':
-              errorMessage += 'Password is too weak';
-              break;
-            case 'auth/operation-not-allowed':
-              errorMessage += 'Email/password accounts are not enabled. Please check Firebase Console.';
-              break;
-            default:
-              errorMessage += error.message || 'Unknown error';
-          }
-
-          registerError.textContent = errorMessage;
-        }
-      });
-
-      // Logout
-      window.logout = () => {
-        signOut(auth).then(() => {
-          console.log("User signed out");
-          // Clear forms
-          document.getElementById('loginForm').reset();
-          document.getElementById('registerForm').reset();
-          // Reset UI to login tab
-          const loginBtn = Array.from(document.querySelectorAll('.tab-button')).find(b => b.textContent.trim().toLowerCase() === 'login');
-          showTab('login', loginBtn);
-        }).catch((error) => {
-          console.error("Logout error:", error);
-        });
-      };
-
-      // Teacher post announcement
-      document.getElementById("postBtn").addEventListener("click", async () => {
-        const text = document.getElementById("announcement").value.trim();
-        if (!text) {
-          alert("Please enter announcement text.");
-          return;
-        }
-
-        try {
-          await addDoc(collection(db, "announcements"), {
-            text,
-            date: serverTimestamp(),
-            author: auth.currentUser ? auth.currentUser.email : 'unknown'
-          });
-          document.getElementById("announcement").value = "";
-          loadMessages("teacher");
-        } catch (error) {
-          console.error("Error posting announcement:", error);
-          alert("Error posting announcement: " + (error.message || error));
-        }
-      });
-
-      // Load announcements (teacher sees same announcements as learners)
-      async function loadMessages(role) {
-        try {
-          // If there are documents without "date" the orderBy will still work,
-          // but Firestore requires an index for complex queries if used.
-          const q = query(collection(db, "announcements"), orderBy("date", "desc"));
-          const snapshot = await getDocs(q);
-          const container = role === "teacher" ? teacherMessages : learnerMessages;
-          container.innerHTML = "";
-
-          if (snapshot.empty) {
-            container.innerHTML = "<div>No announcements yet.</div>";
-            return;
-          }
-
-          snapshot.forEach((d) => {
-            const data = d.data();
-            const div = document.createElement("div");
-
-            let dateString = "Recently";
-            if (data.date && typeof data.date.toDate === 'function') {
-              try {
-                dateString = data.date.toDate().toLocaleString();
-              } catch (err) {
-                dateString = new Date().toLocaleString() + " (pending)";
-              }
-            }
-
-            const author = data.author ? `<small>by ${escapeHtml(String(data.author))}</small>` : '';
-            div.innerHTML = `<strong>${escapeHtml(String(data.text || ''))}</strong><br><small>${dateString}</small>${author ? '<br>' + author : ''}`;
-            container.appendChild(div);
-          });
-        } catch (error) {
-          console.error("Error loading messages:", error);
-          const container = role === "teacher" ? teacherMessages : learnerMessages;
-          container.innerHTML = "<div>Error loading announcements.</div>";
-        }
+        // show lists
+        startListeners();
+      } else {
+        // signed out
+        userInfo.textContent = 'Not signed in';
+        logoutBtn.classList.add('hidden');
+        document.getElementById('authWrap').classList.remove('hidden');
+        teacherControls.classList.add('hidden');
+        stopListeners();
+        announcementsList.innerHTML=''; homeworkList.innerHTML='';
       }
+    });
 
-      // small helper to avoid inserting raw HTML content
-      function escapeHtml(str) {
-        return str.replace(/[&<>"']/g, (m) => {
-          switch (m) {
-            case '&': return '&amp;';
-            case '<': return '&lt;';
-            case '>': return '&gt;';
-            case '"': return '&quot;';
-            case "'": return '&#39;';
-            default: return m;
-          }
+    // posting announcement
+    document.getElementById('postAnnouncement').addEventListener('click', async ()=>{
+      const text = document.getElementById('announcementText').value.trim();
+      if(!text){ alert('Type announcement'); return; }
+      try{ await addDoc(collection(db,'announcements'),{text,author:auth.currentUser?.email||'unknown',date:serverTimestamp(),persistent:true}); document.getElementById('announcementText').value=''; }
+      catch(e){ console.error(e); alert('Failed to post'); }
+    });
+
+    // posting homework
+    document.getElementById('homeworkForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const title = document.getElementById('hwTitle').value.trim();
+      const desc = document.getElementById('hwDescription').value.trim();
+      const due = document.getElementById('hwDue').value || null;
+      const grade = document.getElementById('hwGrade').value || null;
+      const msg = document.getElementById('hwMsg'); msg.textContent='';
+      if(!title||!desc){ msg.textContent='Please add title and description'; return; }
+      try{
+        await addDoc(collection(db,'homeworks'),{title,desc,due,grade,author:auth.currentUser?.email||'unknown',createdAt:serverTimestamp(),persistent:true});
+        msg.textContent = 'Saved — persistent.';
+        document.getElementById('homeworkForm').reset();
+      }catch(e){ console.error(e); msg.textContent = 'Save failed'; }
+    });
+
+    // realtime listeners for announcements and homeworks with pagination support
+    let annUnsub=null, hwUnsub=null;
+    function startListeners(){
+      // announcements: load first PAGE_SIZE and listen for realtime updates (efficient if your app is small)
+      const annQ = query(collection(db,'announcements'), orderBy('date','desc'), limit(PAGE_SIZE));
+      annUnsub = onSnapshot(annQ, snap=>{
+        announcementsList.innerHTML = '';
+        snap.forEach(doc=>{
+          const d = doc.data();
+          announcementsList.appendChild(renderAnnouncement(d));
         });
-      }
+        annCursor = snap.docs.length ? snap.docs[snap.docs.length-1] : null;
+      }, err=>{ console.error('Ann snapshot',err); announcementsList.innerHTML = '<div class="muted">Failed to load announcements</div>'; });
 
-    } catch (error) {
-      console.error("Firebase initialization error:", error);
-      const fbStatus = document.getElementById('firebaseStatus');
-      fbStatus.textContent = 'Firebase init failed: ' + (error.message || error);
-      fbStatus.style.color = 'red';
+      const hwQ = query(collection(db,'homeworks'), orderBy('createdAt','desc'), limit(PAGE_SIZE));
+      hwUnsub = onSnapshot(hwQ, snap=>{
+        homeworkList.innerHTML = '';
+        snap.forEach(doc=> homeworkList.appendChild(renderHomework(doc.data())) );
+        hwCursor = snap.docs.length ? snap.docs[snap.docs.length-1] : null;
+      }, err=>{ console.error('HW snapshot',err); homeworkList.innerHTML = '<div class="muted">Failed to load homeworks</div>'; });
     }
+    function stopListeners(){ if(annUnsub) annUnsub(); if(hwUnsub) hwUnsub(); annUnsub=null; hwUnsub=null; }
+
+    // "Load more" actions (one-time fetch to append older items)
+    loadMoreAnnouncements.addEventListener('click', async ()=>{
+      if(!annCursor) return; // nothing more
+      try{
+        const moreQ = query(collection(db,'announcements'), orderBy('date','desc'), startAfter(annCursor), limit(PAGE_SIZE));
+        const snap = await getDocs(moreQ);
+        snap.forEach(doc=> announcementsList.appendChild(renderAnnouncement(doc.data())));
+        annCursor = snap.docs.length ? snap.docs[snap.docs.length-1] : annCursor;
+      }catch(e){ console.error(e); }
+    });
+    loadMoreHomeworks.addEventListener('click', async ()=>{
+      if(!hwCursor) return;
+      try{
+        const moreQ = query(collection(db,'homeworks'), orderBy('createdAt','desc'), startAfter(hwCursor), limit(PAGE_SIZE));
+        const snap = await getDocs(moreQ);
+        snap.forEach(doc=> homeworkList.appendChild(renderHomework(doc.data())));
+        hwCursor = snap.docs.length ? snap.docs[snap.docs.length-1] : hwCursor;
+      }catch(e){ console.error(e); }
+    });
+
+    // render helpers
+    function renderAnnouncement(d){
+      const el = document.createElement('div'); el.className='list-item';
+      el.innerHTML = `<div>${escapeHtml(d.text||'')}</div><div class='meta'>${d.author?escapeHtml(d.author)+' — ':''}${d.date && d.date.toDate ? escapeHtml(d.date.toDate().toLocaleString()) : ''}${d.persistent? ' • persistent':''}</div>`;
+      return el;
+    }
+    function renderHomework(d){
+      const el = document.createElement('div'); el.className='list-item';
+      el.innerHTML = `<strong>${escapeHtml(d.title||'')}</strong><div style="margin-top:6px">${escapeHtml(d.desc||'')}</div><div class='meta'>${d.grade?escapeHtml(d.grade)+' • ':''}${d.due? 'Due: '+escapeHtml(d.due) : ''} • ${d.author?escapeHtml(d.author):''}</div>`;
+      return el;
+    }
+
+    // minimal html escape
+    function escapeHtml(s){ return String(s||'').replace(/[&<>\"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;" })[m]); }
   </script>
 </body>
 </html>
