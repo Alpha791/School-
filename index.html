@@ -1,32 +1,14 @@
-ok<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>School Project</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      padding: 0;
-      background: #f9f9f9;
-    }
-    input, textarea, button {
-      display: block;
-      margin: 10px 0;
-      padding: 8px;
-      width: 100%;
-      max-width: 300px;
-    }
-    #messages div {
-      background: #eee;
-      margin: 5px 0;
-      padding: 10px;
-      border-radius: 5px;
-    }
-    .hidden {
-      display: none;
-    }
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
+    input, textarea, button { display: block; margin: 10px 0; padding: 8px; width: 100%; max-width: 300px; }
+    #messages div { background: #eee; margin: 5px 0; padding: 10px; border-radius: 5px; }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
@@ -60,34 +42,37 @@ ok<!DOCTYPE html>
 
   <!-- Firebase + App Logic -->
   <script type="module">
-    // Import Firebase SDK
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
-    import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+    // Import Firebase SDKs
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-analytics.js";
+    import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
-    // TODO: Replace with your Firebase project config
+    // Firebase config
     const firebaseConfig = {
-      apiKey: "?AIzaSyD_YydnZKjW8IdApXZKMqDHk6ZiF7Ioh-g",
+      apiKey: "AIzaSyD_YydnZKjW8IdApXZKMqDHk6ZiF7Ioh-g",
       authDomain: "school-homework-f3191.firebaseapp.com",
       projectId: "school-homework-f3191",
       storageBucket: "school-homework-f3191.appspot.com",
       messagingSenderId: "104455696211",
-      appId: "1:104455696211:web:401463c3ce19a8414b3ba6"
+      appId: "1:104455696211:web:f12c1823675c45064b3ba6",
+      measurementId: "G-D88DE8LG6G"
     };
 
-    // Initialize Firebase
+    // Init Firebase
     const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // DOM elements
+    // DOM references
     const loginSection = document.getElementById("loginSection");
     const teacherSection = document.getElementById("teacherSection");
     const learnerSection = document.getElementById("learnerSection");
     const teacherMessages = document.getElementById("teacherMessages");
     const learnerMessages = document.getElementById("learnerMessages");
 
-    // Login logic
+    // Login
     document.getElementById("loginForm").addEventListener("submit", (e) => {
       e.preventDefault();
       const email = document.getElementById("email").value;
@@ -98,15 +83,13 @@ ok<!DOCTYPE html>
           loginSection.classList.add("hidden");
           if (email.includes("teacher")) {
             teacherSection.classList.remove("hidden");
-            loadMessages("teacher");school-homework-f3191
+            loadMessages("teacher");
           } else {
             learnerSection.classList.remove("hidden");
             loadMessages("learner");
           }
         })
-        .catch((error) => {
-          alert("Login failed: " + error.message);
-        });
+        .catch((error) => alert("Login failed: " + error.message));
     });
 
     // Logout
@@ -118,7 +101,7 @@ ok<!DOCTYPE html>
       });
     };
 
-    // Teacher posting
+    // Teacher post
     document.getElementById("postBtn").addEventListener("click", async () => {
       const text = document.getElementById("announcement").value;
       if (text.trim() === "") return;
@@ -127,7 +110,7 @@ ok<!DOCTYPE html>
       loadMessages("teacher");
     });
 
-    // Load messages
+    // Load announcements
     async function loadMessages(role) {
       const querySnapshot = await getDocs(collection(db, "announcements"));
       const container = role === "teacher" ? teacherMessages : learnerMessages;
@@ -145,26 +128,3 @@ ok<!DOCTYPE html>
   </script>
 </body>
 </html>
-<script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-analytics.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
-
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-  const firebaseConfig = {
-    apiKey: "",
-    authDomain: "school-homework-f3191.firebaseapp.com",
-    projectId: "school-homework-f3191",
-    storageBucket: "school-homework-f3191.firebasestorage.app",
-    messagingSenderId: "104455696211",
-    appId: "1:104455696211:web:401463c3ce19a8414b3ba6",
-    measurementId: "G-754ZKVX3TY"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-</script>
