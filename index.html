@@ -37,7 +37,7 @@
       margin-bottom: 10px;
     }
     button { cursor: pointer; }
-    button[type="submit"] { background: var(--accent); color: white; border: none; }
+    button[type="submit"], .primary-btn { background: var(--accent); color: white; border: none; }
     .secondary-btn { background: transparent; border: 1px solid #d1d5db; color: #111827; }
     .hidden { display: none; }
     .homework-box { background: #eef2ff; padding: 10px; margin: 8px 0; border-radius: 8px; word-wrap: break-word; }
@@ -49,20 +49,22 @@
   <div class="container">
     <h1>Homework Portal</h1>
 
-    <!-- Login/Register -->
+    <!-- Auth Section -->
     <div id="authSection">
       <div>
-        <button onclick="showTab('login', this)">Login</button>
-        <button onclick="showTab('register', this)">Register</button>
+        <button onclick="showTab('login')">Login</button>
+        <button onclick="showTab('register')">Register</button>
       </div>
 
+      <!-- Login -->
       <div id="loginTab">
         <input type="email" id="loginEmail" placeholder="Email" required>
         <input type="password" id="loginPassword" placeholder="Password" required>
-        <button onclick="login()">Login</button>
+        <button class="primary-btn" onclick="login()">Login</button>
         <div id="loginError" style="color:red;"></div>
       </div>
 
+      <!-- Register -->
       <div id="registerTab" class="hidden">
         <input type="email" id="registerEmail" placeholder="Email" required>
         <input type="password" id="registerPassword" placeholder="Password" required>
@@ -71,7 +73,9 @@
           <option value="teacher">Teacher</option>
           <option value="learner">Learner</option>
         </select>
-        <button onclick="register()">Register</button>
+        <!-- Teacher Code -->
+        <input type="text" id="teacherCode" class="hidden" placeholder="Enter teacher code">
+        <button class="primary-btn" onclick="register()">Register</button>
         <div id="registerError" style="color:red;"></div>
         <div id="registerSuccess" style="color:green;"></div>
       </div>
@@ -82,7 +86,7 @@
       <h2>Teacher Dashboard</h2>
       <input type="text" id="hwTitle" placeholder="Homework Title">
       <textarea id="hwContent" placeholder="Homework Content"></textarea>
-      <button onclick="postHomework()">Post Homework</button>
+      <button class="primary-btn" onclick="postHomework()">Post Homework</button>
       <h3>Submitted Answers</h3>
       <div id="submittedAnswers"></div>
       <button onclick="logout()" class="secondary-btn">Logout</button>
@@ -95,7 +99,7 @@
       <h3>Submit Answer</h3>
       <select id="selectHomework"></select>
       <textarea id="learnerAnswer" placeholder="Type your answer"></textarea>
-      <button onclick="submitAnswer()">Submit</button>
+      <button class="primary-btn" onclick="submitAnswer()">Submit</button>
       <button onclick="logout()" class="secondary-btn">Logout</button>
     </div>
   </div>
@@ -119,9 +123,11 @@
       updateDoc,
       serverTimestamp,
       query,
-      orderBy
+      orderBy,
+      getDoc
     } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
+    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyD_YydnZKjW8IdApXZKMqDHk6ZiF7Ioh-g",
       authDomain: "school-homework-f3191.firebaseapp.com",
@@ -144,14 +150,31 @@
       document.getElementById('registerTab').classList.toggle('hidden', tab !== 'register');
     }
 
+    // Show teacher code input if "teacher" is selected
+    document.getElementById("userType").addEventListener("change", (e) => {
+      document.getElementById("teacherCode").classList.toggle("hidden", e.target.value !== "teacher");
+    });
+
     async function register() {
       const email = document.getElementById("registerEmail").value;
       const password = document.getElementById("registerPassword").value;
       const userType = document.getElementById("userType").value;
+      const teacherCode = document.getElementById("teacherCode").value;
+
       try {
+        if (!userType) throw new Error("Please select user type.");
+        if (userType === "teacher" && teacherCode !== "0852") {
+          throw new Error("Invalid teacher code.");
+        }
+
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        await setDoc(doc(db, "users", userCredential.user.uid), { email, userType, createdAt: serverTimestamp() });
+        await setDoc(doc(db, "users", userCredential.user.uid), {
+          email,
+          userType,
+          createdAt: serverTimestamp()
+        });
         document.getElementById("registerSuccess").textContent = "Account created!";
+        document.getElementById("registerError").textContent = "";
       } catch (e) {
         document.getElementById("registerError").textContent = e.message;
       }
@@ -174,8 +197,11 @@
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         authSection.classList.add("hidden");
-        const userDoc = await getDocs(query(collection(db,"users")));
-        const userData = userDoc.docs.find(d => d.id === user.uid)?.data();
+
+        // Fetch user data
+        const snap = await getDoc(doc(db, "users", user.uid));
+        const userData = snap.data();
+
         if (userData?.userType === "teacher") {
           teacherSection.classList.remove("hidden");
           loadSubmittedAnswers();
@@ -216,7 +242,10 @@
       const hwId = document.getElementById("selectHomework").value;
       const answer = document.getElementById("learnerAnswer").value;
       if (!hwId || !answer) return alert("Select homework and type answer");
-      await addDoc(collection(db,"answers"), { hwId, answer, learner: auth.currentUser.email, createdAt: serverTimestamp(), marked: false });
+      await addDoc(collection(db,"answers"), {
+        hwId, answer, learner: auth.currentUser.email,
+        createdAt: serverTimestamp(), marked: null
+      });
       document.getElementById("learnerAnswer").value = "";
       alert("Answer submitted!");
     }
@@ -230,9 +259,10 @@
         const div = document.createElement("div");
         div.className = "homework-box";
         div.innerHTML = `<strong>${d.learner}:</strong> ${d.answer} 
-        <button onclick="markAnswer('${docu.id}', true)">Correct</button>
-        <button onclick="markAnswer('${docu.id}', false)">Incorrect</button>`;
-        if(d.marked !== undefined) div.classList.add(d.marked ? 'marked-correct':'marked-incorrect');
+          <button onclick="markAnswer('${docu.id}', true)">Correct</button>
+          <button onclick="markAnswer('${docu.id}', false)">Incorrect</button>`;
+        if(d.marked === true) div.classList.add('marked-correct');
+        if(d.marked === false) div.classList.add('marked-incorrect');
         container.appendChild(div);
       });
     }
