@@ -20,18 +20,16 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    body {
-  background: url('https://raw.githubusercontent.com/Alpha791/School-/main/wander-fleur-1lmGTHdQdjM-unsplash.jpg') no-repeat center center fixed;
-  background-size: cover;
-}
-
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: var(--text-color);
+  }
 
   body::before {
     content: "";
     position: absolute;
     top:0; left:0;
     width:100%; height:100%;
-    background: rgba(0,0,0,0.4);
+    background: rgba(0,0,0,0.2);
     z-index:0;
   }
 
@@ -190,19 +188,32 @@
   async function login() {
     const email = document.getElementById("loginEmail").value.trim();
     const password = document.getElementById("loginPassword").value.trim();
-    try { await signInWithEmailAndPassword(auth,email,password); document.getElementById("loginError").textContent=""; } 
+    try { 
+      await signInWithEmailAndPassword(auth,email,password); 
+      document.getElementById("loginError").textContent=""; 
+    } 
     catch(e){ document.getElementById("loginError").textContent=e.message; }
   }
 
-  window.logout=()=>signOut(auth);
+  window.logout=async()=>{ 
+    await signOut(auth); 
+  };
 
   onAuthStateChanged(auth,async(user)=>{
     if(user){
       authSection.classList.add("hidden");
       const snap=await getDoc(doc(db,"users",user.uid));
       const userData=snap.data();
-      if(userData?.userType==="teacher"){ teacherSection.classList.remove("hidden"); learnerSection.classList.add("hidden"); loadSubmittedAnswers(); }
-      else{ learnerSection.classList.remove("hidden"); teacherSection.classList.add("hidden"); loadHomework(); }
+      if(userData?.userType==="teacher"){ 
+        teacherSection.classList.remove("hidden"); 
+        learnerSection.classList.add("hidden"); 
+        loadSubmittedAnswers(); 
+      }
+      else{ 
+        learnerSection.classList.remove("hidden"); 
+        teacherSection.classList.add("hidden"); 
+        loadHomework(); 
+      }
     }else{
       authSection.classList.remove("hidden");
       teacherSection.classList.add("hidden");
@@ -215,8 +226,10 @@
     const content=document.getElementById("hwContent").value.trim();
     if(!title||!content) return alert("Enter title and content");
     await addDoc(collection(db,"homeworks"),{title,content,createdAt:serverTimestamp()});
-    document.getElementById("hwTitle").value=""; document.getElementById("hwContent").value="";
-    alert("Homework posted!"); loadHomework();
+    document.getElementById("hwTitle").value=""; 
+    document.getElementById("hwContent").value="";
+    alert("Homework posted!"); 
+    await loadHomework();
   }
 
   async function loadHomework(){
@@ -236,14 +249,17 @@
     const answer=document.getElementById("learnerAnswer").value.trim();
     if(!hwId||!answer) return alert("Select homework and type answer");
     await addDoc(collection(db,"answers"),{hwId,answer,learner:auth.currentUser.email,createdAt:serverTimestamp(),marked:null});
-    document.getElementById("learnerAnswer").value=""; alert("Answer submitted!");
+    document.getElementById("learnerAnswer").value=""; 
+    alert("Answer submitted!");
   }
 
   async function loadSubmittedAnswers(){
-    const container=document.getElementById("submittedAnswers"); container.innerHTML="";
+    const container=document.getElementById("submittedAnswers"); 
+    container.innerHTML="";
     const snapshot=await getDocs(query(collection(db,"answers"),orderBy("createdAt","desc")));
     snapshot.forEach(docu=>{
-      const d=docu.data(); const div=document.createElement("div");
+      const d=docu.data(); 
+      const div=document.createElement("div");
       div.className="homework-box";
       div.innerHTML=`<strong>${d.learner}:</strong> ${d.answer}<br>
       <button onclick="markAnswer('${docu.id}',true)">Correct</button>
@@ -254,7 +270,12 @@
     });
   }
 
-  window.markAnswer=async(id,correct)=>{ await updateDoc(doc(db,"answers",id),{marked:correct}); loadSubmittedAnswers(); };
+  window.markAnswer=async(id,correct)=>{
+    await updateDoc(doc(db,"answers",id),{marked:correct}); 
+    loadSubmittedAnswers();
+  };
+
+  // Disable right-click
   document.addEventListener('contextmenu', e=>e.preventDefault());
 </script>
 </body>
