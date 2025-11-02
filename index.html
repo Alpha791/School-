@@ -27,7 +27,7 @@
       border-radius: 10px;
       box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
     }
-    h1 { margin-top: 0; font-size: 1.6rem; }
+    h1 { margin-top: 0; font-size: 1.6rem; text-align:center; }
     input, select, textarea, button {
       width: 100%;
       font-size: 0.95rem;
@@ -43,6 +43,8 @@
     .homework-box { background: #eef2ff; padding: 10px; margin: 8px 0; border-radius: 8px; word-wrap: break-word; }
     .marked-correct { background-color: #d1fae5; }
     .marked-incorrect { background-color: #fee2e2; }
+    .tabs { text-align:center; margin-bottom: 15px; }
+    .tabs button { width: 45%; }
   </style>
 </head>
 <body>
@@ -51,7 +53,7 @@
 
     <!-- Auth Section -->
     <div id="authSection">
-      <div>
+      <div class="tabs">
         <button onclick="showTab('login')">Login</button>
         <button onclick="showTab('register')">Register</button>
       </div>
@@ -73,7 +75,6 @@
           <option value="teacher">Teacher</option>
           <option value="learner">Learner</option>
         </select>
-        <!-- Teacher Code -->
         <input type="text" id="teacherCode" class="hidden" placeholder="Enter teacher code">
         <button class="primary-btn" onclick="register()">Register</button>
         <div id="registerError" style="color:red;"></div>
@@ -127,9 +128,9 @@
       getDoc
     } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
-    // Firebase config
+    // ✅ Your Firebase Config (replace apiKey below with your real one)
     const firebaseConfig = {
-      apiKey: "${{secrets.FIREBASEAPIKEY",
+      apiKey: "secret.FIREBASEAPIKEY",
       authDomain: "school-homework-f3191.firebaseapp.com",
       projectId: "school-homework-f3191",
       storageBucket: "school-homework-f3191.appspot.com",
@@ -137,6 +138,7 @@
       appId: "1:104455696211:web:f12c1823675c45064b3ba6"
     };
 
+    // ✅ Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
@@ -145,23 +147,26 @@
     const teacherSection = document.getElementById("teacherSection");
     const learnerSection = document.getElementById("learnerSection");
 
-    function showTab(tab) {
-      document.getElementById('loginTab').classList.toggle('hidden', tab !== 'login');
-      document.getElementById('registerTab').classList.toggle('hidden', tab !== 'register');
+    // ✅ Switch between Login & Register tabs
+    window.showTab = function(tab) {
+      document.getElementById("loginTab").classList.toggle("hidden", tab !== "login");
+      document.getElementById("registerTab").classList.toggle("hidden", tab !== "register");
     }
 
-    // Show teacher code input if "teacher" is selected
+    // ✅ Show teacher code input
     document.getElementById("userType").addEventListener("change", (e) => {
       document.getElementById("teacherCode").classList.toggle("hidden", e.target.value !== "teacher");
     });
 
+    // ✅ Register
     async function register() {
-      const email = document.getElementById("registerEmail").value;
-      const password = document.getElementById("registerPassword").value;
+      const email = document.getElementById("registerEmail").value.trim();
+      const password = document.getElementById("registerPassword").value.trim();
       const userType = document.getElementById("userType").value;
-      const teacherCode = document.getElementById("teacherCode").value;
+      const teacherCode = document.getElementById("teacherCode").value.trim();
 
       try {
+        if (!email || !password) throw new Error("Please fill in all fields.");
         if (!userType) throw new Error("Please select user type.");
         if (userType === "teacher" && teacherCode !== "0852") {
           throw new Error("Invalid teacher code.");
@@ -173,40 +178,45 @@
           userType,
           createdAt: serverTimestamp()
         });
-        document.getElementById("registerSuccess").textContent = "Account created!";
+        document.getElementById("registerSuccess").textContent = "Account created successfully!";
         document.getElementById("registerError").textContent = "";
       } catch (e) {
         document.getElementById("registerError").textContent = e.message;
       }
     }
 
+    // ✅ Login
     async function login() {
-      const email = document.getElementById("loginEmail").value;
-      const password = document.getElementById("loginPassword").value;
+      const email = document.getElementById("loginEmail").value.trim();
+      const password = document.getElementById("loginPassword").value.trim();
       try {
         await signInWithEmailAndPassword(auth, email, password);
+        document.getElementById("loginError").textContent = "";
       } catch (e) {
         document.getElementById("loginError").textContent = e.message;
       }
     }
 
-    function logout() {
+    // ✅ Logout
+    window.logout = function() {
       signOut(auth);
-    }
+    };
 
+    // ✅ Auth state handler
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         authSection.classList.add("hidden");
 
-        // Fetch user data
         const snap = await getDoc(doc(db, "users", user.uid));
         const userData = snap.data();
 
         if (userData?.userType === "teacher") {
           teacherSection.classList.remove("hidden");
+          learnerSection.classList.add("hidden");
           loadSubmittedAnswers();
         } else {
           learnerSection.classList.remove("hidden");
+          teacherSection.classList.add("hidden");
           loadHomework();
         }
       } else {
@@ -216,21 +226,25 @@
       }
     });
 
+    // ✅ Post homework
     async function postHomework() {
-      const title = document.getElementById("hwTitle").value;
-      const content = document.getElementById("hwContent").value;
+      const title = document.getElementById("hwTitle").value.trim();
+      const content = document.getElementById("hwContent").value.trim();
       if (!title || !content) return alert("Enter title and content");
+
       await addDoc(collection(db, "homeworks"), { title, content, createdAt: serverTimestamp() });
       document.getElementById("hwTitle").value = "";
       document.getElementById("hwContent").value = "";
+      alert("Homework posted!");
       loadHomework();
     }
 
+    // ✅ Load homeworks for learners
     async function loadHomework() {
       const hwSelect = document.getElementById("selectHomework");
       const hwList = document.getElementById("homeworkList");
       hwList.innerHTML = ""; hwSelect.innerHTML = "";
-      const snapshot = await getDocs(query(collection(db, "homeworks"), orderBy("createdAt","desc")));
+      const snapshot = await getDocs(query(collection(db, "homeworks"), orderBy("createdAt", "desc")));
       snapshot.forEach(docu => {
         const data = docu.data();
         hwList.innerHTML += `<div class="homework-box"><strong>${data.title}</strong><p>${data.content}</p></div>`;
@@ -238,41 +252,49 @@
       });
     }
 
+    // ✅ Submit answer
     async function submitAnswer() {
       const hwId = document.getElementById("selectHomework").value;
-      const answer = document.getElementById("learnerAnswer").value;
+      const answer = document.getElementById("learnerAnswer").value.trim();
       if (!hwId || !answer) return alert("Select homework and type answer");
-      await addDoc(collection(db,"answers"), {
-        hwId, answer, learner: auth.currentUser.email,
-        createdAt: serverTimestamp(), marked: null
+      await addDoc(collection(db, "answers"), {
+        hwId,
+        answer,
+        learner: auth.currentUser.email,
+        createdAt: serverTimestamp(),
+        marked: null
       });
       document.getElementById("learnerAnswer").value = "";
       alert("Answer submitted!");
     }
 
+    // ✅ Load submitted answers for teachers
     async function loadSubmittedAnswers() {
       const container = document.getElementById("submittedAnswers");
       container.innerHTML = "";
-      const snapshot = await getDocs(query(collection(db,"answers"), orderBy("createdAt","desc")));
+      const snapshot = await getDocs(query(collection(db, "answers"), orderBy("createdAt", "desc")));
       snapshot.forEach(docu => {
         const d = docu.data();
         const div = document.createElement("div");
         div.className = "homework-box";
-        div.innerHTML = `<strong>${d.learner}:</strong> ${d.answer} 
+        div.innerHTML = `
+          <strong>${d.learner}:</strong> ${d.answer}<br>
           <button onclick="markAnswer('${docu.id}', true)">Correct</button>
-          <button onclick="markAnswer('${docu.id}', false)">Incorrect</button>`;
-        if(d.marked === true) div.classList.add('marked-correct');
-        if(d.marked === false) div.classList.add('marked-incorrect');
+          <button onclick="markAnswer('${docu.id}', false)">Incorrect</button>
+        `;
+        if (d.marked === true) div.classList.add("marked-correct");
+        if (d.marked === false) div.classList.add("marked-incorrect");
         container.appendChild(div);
       });
     }
 
-    async function markAnswer(id, correct) {
-      await updateDoc(doc(db,"answers",id), { marked: correct });
+    // ✅ Mark answers
+    window.markAnswer = async (id, correct) => {
+      await updateDoc(doc(db, "answers", id), { marked: correct });
       loadSubmittedAnswers();
-    }
+    };
 
-    // Disable right click
+    // ✅ Disable right-click
     document.addEventListener('contextmenu', e => e.preventDefault());
   </script>
 </body>
